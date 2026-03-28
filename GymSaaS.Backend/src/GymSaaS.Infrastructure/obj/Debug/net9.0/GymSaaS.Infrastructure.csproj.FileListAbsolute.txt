@@ -19,3 +19,4 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Infrastructure\obj\Debug\net9.0\G
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Infrastructure\obj\Debug\net9.0\refint\GymSaaS.Infrastructure.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Infrastructure\obj\Debug\net9.0\GymSaaS.Infrastructure.pdb
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Infrastructure\obj\Debug\net9.0\ref\GymSaaS.Infrastructure.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Infrastructure\obj\Debug\net9.0\GymSaaS.Infrastructure.sourcelink.json

@@ -60,6 +60,22 @@ public class MembershipController : ControllerBase
         }
     }
 
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Owner,Manager,Receptionist")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMembershipDto dto)
+    {
+        try
+        {
+            var result = await _membershipService.UpdateAsync(id, dto);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating the membership.", error = ex.Message });
+        }
+    }
+
     [HttpGet("payments/{memberId:guid}")]
     public async Task<IActionResult> GetPayments(Guid memberId)
     {

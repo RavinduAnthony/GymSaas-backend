@@ -207,6 +207,27 @@
   },
   {
     "ContainingType": "GymSaaS.API.Controllers.MembershipController",
+    "Method": "Update",
+    "RelativePath": "api/Membership/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "GymSaaS.Application.DTOs.Memberships.UpdateMembershipDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.MembershipController",
     "Method": "GetByMember",
     "RelativePath": "api/Membership/member/{memberId}",
     "HttpMethod": "GET",

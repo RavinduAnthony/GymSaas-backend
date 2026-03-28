@@ -13,3 +13,4 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.S
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\refint\GymSaaS.Shared.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.pdb
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\ref\GymSaaS.Shared.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.sourcelink.json

@@ -17,3 +17,4 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Application\obj\Debug\net9.0\GymS
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Application\obj\Debug\net9.0\refint\GymSaaS.Application.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Application\obj\Debug\net9.0\GymSaaS.Application.pdb
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Application\obj\Debug\net9.0\ref\GymSaaS.Application.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Application\obj\Debug\net9.0\GymSaaS.Application.sourcelink.json

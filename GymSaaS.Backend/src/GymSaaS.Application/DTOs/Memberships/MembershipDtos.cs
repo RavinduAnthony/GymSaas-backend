@@ -11,6 +11,16 @@ public class CreateMembershipDto
     public string PaymentStatus { get; set; } = "Pending";
 }
 
+public class UpdateMembershipDto
+{
+    public Guid PackageId { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal Price { get; set; }
+    public decimal Discount { get; set; }
+    public string PaymentStatus { get; set; } = "Pending";
+}
+
 public class RenewMembershipDto
 {
     public Guid MembershipId { get; set; }
@@ -25,6 +35,7 @@ public class MembershipResponseDto
     public Guid Id { get; set; }
     public Guid MemberId { get; set; }
     public Guid PackageId { get; set; }
+    public string PackageName { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal Price { get; set; }

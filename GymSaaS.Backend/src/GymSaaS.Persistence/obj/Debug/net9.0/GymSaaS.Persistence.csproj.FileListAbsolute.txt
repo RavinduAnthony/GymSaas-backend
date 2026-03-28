@@ -17,3 +17,4 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Persistence\obj\Debug\net9.0\refi
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Persistence\obj\Debug\net9.0\GymSaaS.Persistence.pdb
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Persistence\obj\Debug\net9.0\GymSaaS.Persistence.genruntimeconfig.cache
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Persistence\obj\Debug\net9.0\ref\GymSaaS.Persistence.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Persistence\obj\Debug\net9.0\GymSaaS.Persistence.sourcelink.json

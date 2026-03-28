@@ -2,6 +2,7 @@ using GymSaaS.Application.DTOs.Memberships;
 using GymSaaS.Domain.Entities;
 using GymSaaS.Domain.Interfaces;
 using GymSaaS.Shared;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymSaaS.Application.Services;
 
@@ -9,11 +10,13 @@ public class MembershipService
 {
     private readonly IRepository<Membership> _membershipRepo;
     private readonly IRepository<Payment> _paymentRepo;
+    private readonly IRepository<MembershipPackage> _packageRepo;
 
-    public MembershipService(IRepository<Membership> membershipRepo, IRepository<Payment> paymentRepo)
+    public MembershipService(IRepository<Membership> membershipRepo, IRepository<Payment> paymentRepo, IRepository<MembershipPackage> packageRepo)
     {
         _membershipRepo = membershipRepo;
         _paymentRepo = paymentRepo;
+        _packageRepo = packageRepo;
     }
 
     public async Task<ApiResponse<IEnumerable<MembershipResponseDto>>> GetByMemberAsync(Guid memberId)
@@ -21,11 +24,51 @@ public class MembershipService
         try
         {
             var memberships = await _membershipRepo.FindAsync(m => m.MemberId == memberId);
-            return ApiResponse<IEnumerable<MembershipResponseDto>>.Ok(memberships.Select(MapToDto));
+            var packages = await _packageRepo.GetAllAsync();
+            var packageDict = packages.ToDictionary(p => p.Id, p => p.Name);
+
+            var dtos = memberships.Select(m =>
+            {
+                var dto = MapToDto(m);
+                dto.PackageName = packageDict.TryGetValue(m.PackageId, out var name) ? name : string.Empty;
+                return dto;
+            });
+
+            return ApiResponse<IEnumerable<MembershipResponseDto>>.Ok(dtos);
         }
         catch (Exception ex)
         {
             return ApiResponse<IEnumerable<MembershipResponseDto>>.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<MembershipResponseDto>> UpdateAsync(Guid membershipId, UpdateMembershipDto dto)
+    {
+        try
+        {
+            var membership = await _membershipRepo.GetByIdAsync(membershipId);
+            if (membership == null) return ApiResponse<MembershipResponseDto>.Fail("Membership not found.");
+
+            membership.PackageId = dto.PackageId;
+            membership.StartDate = dto.StartDate;
+            membership.EndDate = dto.EndDate;
+            membership.Price = dto.Price;
+            membership.Discount = dto.Discount;
+            membership.PaymentStatus = dto.PaymentStatus;
+
+            _membershipRepo.Update(membership);
+            await _membershipRepo.SaveChangesAsync();
+
+            var packages = await _packageRepo.GetAllAsync();
+            var packageName = packages.FirstOrDefault(p => p.Id == membership.PackageId)?.Name ?? string.Empty;
+
+            var responseDto = MapToDto(membership);
+            responseDto.PackageName = packageName;
+            return ApiResponse<MembershipResponseDto>.Ok(responseDto, "Membership updated.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<MembershipResponseDto>.Fail($"An error occurred: {ex.Message}");
         }
     }
 
@@ -47,7 +90,26 @@ public class MembershipService
             await _membershipRepo.AddAsync(membership);
             await _membershipRepo.SaveChangesAsync();
 
-            return ApiResponse<MembershipResponseDto>.Ok(MapToDto(membership), "Membership created.");
+            var package = await _packageRepo.GetByIdAsync(dto.PackageId);
+
+            // If marked as Paid at enrollment, record the initial payment immediately
+            if (string.Equals(dto.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+            {
+                var payment = new Payment
+                {
+                    MemberId = dto.MemberId,
+                    MembershipId = membership.Id,
+                    Amount = dto.Price - dto.Discount,
+                    Date = DateTime.UtcNow,
+                    PlanName = package?.Name ?? string.Empty,
+                };
+                await _paymentRepo.AddAsync(payment);
+                await _paymentRepo.SaveChangesAsync();
+            }
+
+            var responseDto = MapToDto(membership);
+            responseDto.PackageName = package?.Name ?? string.Empty;
+            return ApiResponse<MembershipResponseDto>.Ok(responseDto, "Membership created.");
         }
         catch (Exception ex)
         {
