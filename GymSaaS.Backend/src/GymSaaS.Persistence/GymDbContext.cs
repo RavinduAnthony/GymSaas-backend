@@ -1,0 +1,180 @@
+using Microsoft.EntityFrameworkCore;
+using GymSaaS.Domain.Entities;
+using GymSaaS.Domain.Interfaces;
+
+namespace GymSaaS.Persistence;
+
+public class GymDbContext : DbContext
+{
+    private readonly ITenantProvider _tenantProvider;
+
+    public GymDbContext(DbContextOptions<GymDbContext> options, ITenantProvider tenantProvider)
+        : base(options)
+    {
+        _tenantProvider = tenantProvider;
+    }
+
+    public DbSet<Tenant> Tenants { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<Member> Members { get; set; }
+    public DbSet<Trainer> Trainers { get; set; }
+    public DbSet<MembershipPackage> Packages { get; set; }
+    public DbSet<Membership> Memberships { get; set; }
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Attendance> Attendances { get; set; }
+    public DbSet<Role> Roles { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<TrainerAssignment> TrainerAssignments { get; set; }
+    public DbSet<Branch> Branches { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // ─── Global tenant filters ───────────────────────────
+        // Every query automatically becomes: WHERE TenantId = CURRENT_TENANT
+        // This prevents Gym A from accessing Gym B's data.
+
+        modelBuilder.Entity<User>()
+            .HasQueryFilter(u => u.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Member>()
+            .HasQueryFilter(m => m.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Trainer>()
+            .HasQueryFilter(t => t.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<MembershipPackage>()
+            .HasQueryFilter(p => p.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Membership>()
+            .HasQueryFilter(ms => ms.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Payment>()
+            .HasQueryFilter(py => py.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Attendance>()
+            .HasQueryFilter(a => a.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Role>()
+            .HasQueryFilter(r => r.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<AuditLog>()
+            .HasQueryFilter(al => al.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<TrainerAssignment>()
+            .HasQueryFilter(ta => ta.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<Branch>()
+            .HasQueryFilter(b => b.TenantId == _tenantProvider.TenantId);
+
+        // ─── Entity configurations ───────────────────────────
+
+        modelBuilder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.GymName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.SubDomain).IsUnique();
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<Member>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            entity.HasOne(e => e.Trainer).WithMany(t => t.Members).HasForeignKey(e => e.TrainerId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Branch).WithMany(b => b.Members).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Trainer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.HasOne(e => e.Branch).WithMany(b => b.Trainers).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Branch>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+        });
+        modelBuilder.Entity<MembershipPackage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+        });
+
+        modelBuilder.Entity<Membership>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Discount).HasColumnType("decimal(18,2)");
+            entity.HasOne(e => e.Member).WithMany(m => m.Memberships).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Package).WithMany(p => p.Memberships).HasForeignKey(e => e.PackageId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.HasOne(e => e.Member).WithMany(m => m.Payments).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Attendance>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Member).WithMany(m => m.Attendances).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Ensure all DateTime properties are UTC for PostgreSQL
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            foreach (var property in entry.Properties)
+            {
+                if (property.Metadata.ClrType == typeof(DateTime) || property.Metadata.ClrType == typeof(DateTime?))
+                {
+                    if (property.CurrentValue is DateTime dt && dt.Kind == DateTimeKind.Unspecified)
+                    {
+                        property.CurrentValue = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    }
+                }
+            }
+        }
+
+        // Auto-set TenantId on new entities and update timestamps
+        foreach (var entry in ChangeTracker.Entries<BaseTenantEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                // Only override TenantId if it hasn't been explicitly set (which happens during Tenant Registration)
+                if (entry.Entity.TenantId == Guid.Empty)
+                {
+                    entry.Entity.TenantId = _tenantProvider.TenantId;
+                }
+                entry.Entity.CreatedAt = DateTime.UtcNow;
+            }
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
+}

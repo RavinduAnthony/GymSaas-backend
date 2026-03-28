@@ -1,0 +1,9 @@
+namespace GymSaaS.Domain.Entities;
+
+public abstract class BaseTenantEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid TenantId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+}

@@ -1,0 +1,15 @@
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\bin\Debug\net9.0\GymSaaS.Shared.deps.json
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\bin\Debug\net9.0\GymSaaS.Shared.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\bin\Debug\net9.0\GymSaaS.Shared.pdb
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\bin\Debug\net9.0\GymSaaS.Domain.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\bin\Debug\net9.0\GymSaaS.Domain.pdb
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.csproj.AssemblyReference.cache
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.AssemblyInfoInputs.cache
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.AssemblyInfo.cs
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.csproj.CoreCompileInputs.cache
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS..1F841D0E.Up2Date
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\refint\GymSaaS.Shared.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\GymSaaS.Shared.pdb
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.Shared\obj\Debug\net9.0\ref\GymSaaS.Shared.dll

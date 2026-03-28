@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "CvSmufCkxmS4INaFNQZoyYEeSTFLWQcdgqR5dji2LL0=",
+  "Source": "GymSaaS.API",
+  "BasePath": "_content/GymSaaS.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
