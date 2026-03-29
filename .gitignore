@@ -3,3 +3,7 @@
 ################################################################################
 
 /GymSaaS.Backend/.vs
+
+# .NET build outputs (all projects)
+GymSaaS.Backend/**/bin/
+GymSaaS.Backend/**/obj/

@@ -151,4 +151,6 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\zh-Hans\Micr
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\BCrypt.Net-Next.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\obj\Debug\net9.0\GymSaaS.API.sourcelink.json
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\CloudinaryDotNet.dll
+D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\Newtonsoft.Json.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

@@ -11,12 +11,18 @@ public class MembershipService
     private readonly IRepository<Membership> _membershipRepo;
     private readonly IRepository<Payment> _paymentRepo;
     private readonly IRepository<MembershipPackage> _packageRepo;
+    private readonly PaymentService _paymentService;
 
-    public MembershipService(IRepository<Membership> membershipRepo, IRepository<Payment> paymentRepo, IRepository<MembershipPackage> packageRepo)
+    public MembershipService(
+        IRepository<Membership> membershipRepo,
+        IRepository<Payment> paymentRepo,
+        IRepository<MembershipPackage> packageRepo,
+        PaymentService paymentService)
     {
         _membershipRepo = membershipRepo;
         _paymentRepo = paymentRepo;
         _packageRepo = packageRepo;
+        _paymentService = paymentService;
     }
 
     public async Task<ApiResponse<IEnumerable<MembershipResponseDto>>> GetByMemberAsync(Guid memberId)
@@ -91,24 +97,27 @@ public class MembershipService
             await _membershipRepo.SaveChangesAsync();
 
             var package = await _packageRepo.GetByIdAsync(dto.PackageId);
+            var packageName = package?.Name ?? string.Empty;
 
-            // If marked as Paid at enrollment, record the initial payment immediately
+            // Compute duration in months from the dates
+            int durationMonths = ((dto.EndDate.Year - dto.StartDate.Year) * 12)
+                                  + (dto.EndDate.Month - dto.StartDate.Month);
+            if (durationMonths <= 0) durationMonths = 1;
+
+            // Generate payment schedule (monthly obligations + registration fee if any)
+            await _paymentService.GenerateScheduleAsync(
+                membership.Id, dto.MemberId,
+                durationMonths, dto.Price, dto.RegistrationFee,
+                package?.BillingFrequency ?? "Monthly");
+
+            // If paid at registration, immediately mark initial payments as Paid
             if (string.Equals(dto.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
             {
-                var payment = new Payment
-                {
-                    MemberId = dto.MemberId,
-                    MembershipId = membership.Id,
-                    Amount = dto.Price - dto.Discount,
-                    Date = DateTime.UtcNow,
-                    PlanName = package?.Name ?? string.Empty,
-                };
-                await _paymentRepo.AddAsync(payment);
-                await _paymentRepo.SaveChangesAsync();
+                await _paymentService.MarkInitialPaymentsAsPaidAsync(membership.Id, packageName, DateTime.UtcNow);
             }
 
             var responseDto = MapToDto(membership);
-            responseDto.PackageName = package?.Name ?? string.Empty;
+            responseDto.PackageName = packageName;
             return ApiResponse<MembershipResponseDto>.Ok(responseDto, "Membership created.");
         }
         catch (Exception ex)

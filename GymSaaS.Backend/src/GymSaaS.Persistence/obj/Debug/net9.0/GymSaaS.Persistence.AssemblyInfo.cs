@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GymSaaS.Persistence")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1444341efa9ccb4c7fda6218eae6bf3a55ad127c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+69c6554b706aeceda434a6f8040cadeb90aac0b7")]
 [assembly: System.Reflection.AssemblyProductAttribute("GymSaaS.Persistence")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GymSaaS.Persistence")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

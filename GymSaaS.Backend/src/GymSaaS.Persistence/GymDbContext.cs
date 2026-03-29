@@ -26,6 +26,9 @@ public class GymDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<TrainerAssignment> TrainerAssignments { get; set; }
     public DbSet<Branch> Branches { get; set; }
+    public DbSet<WorkingHours> WorkingHours { get; set; }
+    public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
+    public DbSet<PaymentType> PaymentTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +70,12 @@ public class GymDbContext : DbContext
 
         modelBuilder.Entity<Branch>()
             .HasQueryFilter(b => b.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<WorkingHours>()
+            .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<PaymentSchedule>()
+            .HasQueryFilter(ps => ps.TenantId == _tenantProvider.TenantId);
 
         // ─── Entity configurations ───────────────────────────
 
@@ -110,6 +119,14 @@ public class GymDbContext : DbContext
             entity.Property(e => e.Address).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
         });
+
+        modelBuilder.Entity<WorkingHours>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Day).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.OpenTime).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.CloseTime).IsRequired().HasMaxLength(10);
+        });
         modelBuilder.Entity<MembershipPackage>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -130,7 +147,31 @@ public class GymDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.PaymentTypeId).HasDefaultValue(GymSaaS.Shared.AppConstants.PaymentTypeIds.RegularMonthly);
             entity.HasOne(e => e.Member).WithMany(m => m.Payments).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.PaymentSchedule).WithMany(s => s.Payments).HasForeignKey(e => e.PaymentScheduleId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.PaymentType).WithMany(pt => pt.Payments).HasForeignKey(e => e.PaymentTypeId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PaymentSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.PaymentTypeId).HasDefaultValue(GymSaaS.Shared.AppConstants.PaymentTypeIds.RegularMonthly);
+            entity.HasOne(e => e.Membership).WithMany().HasForeignKey(e => e.MembershipId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Member).WithMany().HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.PaymentType).WithMany(pt => pt.PaymentSchedules).HasForeignKey(e => e.PaymentTypeId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PaymentType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.HasData(
+                new PaymentType { Id = 1, Name = "Registration Fee",  Description = "One-time enrollment fee",        IsActive = true },
+                new PaymentType { Id = 2, Name = "First Month Payment", Description = "Initial monthly installment", IsActive = true },
+                new PaymentType { Id = 3, Name = "Monthly Payment",    Description = "Regular monthly subscription", IsActive = true }
+            );
         });
 
         modelBuilder.Entity<Attendance>(entity =>

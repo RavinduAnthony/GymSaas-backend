@@ -9,6 +9,8 @@ using GymSaaS.Application.Services;
 using GymSaaS.Domain.Entities;
 using GymSaaS.Domain.Interfaces;
 using GymSaaS.Infrastructure.Auth;
+using GymSaaS.Infrastructure.Cloudinary;
+using GymSaaS.Infrastructure.Services;
 using GymSaaS.Persistence;
 using GymSaaS.Persistence.Repositories;
 
@@ -32,6 +34,9 @@ builder.Services.AddScoped<IRepository<Membership>, GenericRepository<Membership
 builder.Services.AddScoped<IRepository<Payment>, GenericRepository<Payment>>();
 builder.Services.AddScoped<IRepository<Attendance>, GenericRepository<Attendance>>();
 builder.Services.AddScoped<IRepository<Branch>, GenericRepository<Branch>>();
+builder.Services.AddScoped<IRepository<PaymentSchedule>, GenericRepository<PaymentSchedule>>();
+builder.Services.AddScoped<IRepository<PaymentType>, GenericRepository<PaymentType>>();
+builder.Services.AddScoped<IRepository<MemberDeletionLog>, GenericRepository<MemberDeletionLog>>();
 
 // ─── Application Services ────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -39,11 +44,15 @@ builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<TrainerService>();
 builder.Services.AddScoped<PackageService>();
+builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<BranchService>();
+builder.Services.AddScoped<WorkingHoursService>();
 
 // ─── Infrastructure ──────────────────────────────────
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 // ─── JWT Authentication ──────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -11,6 +11,8 @@ public class CreatePackageDto
     public bool TrainerIncluded { get; set; }
     public int? FreezeDays { get; set; }
     public bool DiscountAllowed { get; set; }
+    /// <summary>"Monthly" | "FullPayment"</summary>
+    public string BillingFrequency { get; set; } = "Monthly";
 }
 
 public class UpdatePackageDto
@@ -25,6 +27,8 @@ public class UpdatePackageDto
     public bool TrainerIncluded { get; set; }
     public int? FreezeDays { get; set; }
     public bool DiscountAllowed { get; set; }
+    /// <summary>"Monthly" | "FullPayment"</summary>
+    public string BillingFrequency { get; set; } = "Monthly";
 }
 
 public class PackageResponseDto
@@ -41,5 +45,7 @@ public class PackageResponseDto
     public bool TrainerIncluded { get; set; }
     public int? FreezeDays { get; set; }
     public bool DiscountAllowed { get; set; }
+    /// <summary>"Monthly" | "FullPayment"</summary>
+    public string BillingFrequency { get; set; } = "Monthly";
     public DateTime CreatedAt { get; set; }
 }

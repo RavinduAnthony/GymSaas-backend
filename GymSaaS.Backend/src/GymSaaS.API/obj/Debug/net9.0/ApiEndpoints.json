@@ -190,6 +190,48 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "GymSaaS.API.Controllers.MemberController",
+    "Method": "Deactivate",
+    "RelativePath": "api/Member/{id}/deactivate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.MemberController",
+    "Method": "Reactivate",
+    "RelativePath": "api/Member/{id}/reactivate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.MemberController",
+    "Method": "GetInactive",
+    "RelativePath": "api/Member/inactive",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "GymSaaS.API.Controllers.MembershipController",
     "Method": "Create",
     "RelativePath": "api/Membership",
@@ -338,6 +380,104 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetHistory",
+    "RelativePath": "api/Payments/history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetHistoryByMember",
+    "RelativePath": "api/Payments/history/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "RecordPayment",
+    "RelativePath": "api/Payments/record",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "GymSaaS.Application.DTOs.Payments.RecordPaymentDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "RefreshLate",
+    "RelativePath": "api/Payments/refresh-late",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetAllSchedules",
+    "RelativePath": "api/Payments/schedules",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetSchedulesByMember",
+    "RelativePath": "api/Payments/schedules/member/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetSummary",
+    "RelativePath": "api/Payments/summary",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.PaymentsController",
+    "Method": "GetPaymentTypes",
+    "RelativePath": "api/Payments/types",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "GymSaaS.API.Controllers.TenantsController",
     "Method": "RegisterTenant",
     "RelativePath": "api/Tenants",
@@ -427,6 +567,93 @@
       {
         "Name": "id",
         "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.UploadController",
+    "Method": "UploadLogo",
+    "RelativePath": "api/uploads/logo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ContentType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "ContentDisposition",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Headers",
+        "Type": "Microsoft.AspNetCore.Http.IHeaderDictionary",
+        "IsRequired": false
+      },
+      {
+        "Name": "Length",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "FileName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.UploadController",
+    "Method": "GetLogo",
+    "RelativePath": "api/uploads/logo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.UploadController",
+    "Method": "DeleteLogo",
+    "RelativePath": "api/uploads/logo",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.WorkingHoursController",
+    "Method": "GetSchedule",
+    "RelativePath": "api/WorkingHours",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GymSaaS.API.Controllers.WorkingHoursController",
+    "Method": "UpsertSchedule",
+    "RelativePath": "api/WorkingHours",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "items",
+        "Type": "System.Collections.Generic.List\u00601[[GymSaaS.Application.DTOs.Settings.UpsertWorkingHoursItemDto, GymSaaS.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "IsRequired": true
       }
     ],

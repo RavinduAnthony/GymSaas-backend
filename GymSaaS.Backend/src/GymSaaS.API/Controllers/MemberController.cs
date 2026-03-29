@@ -31,6 +31,20 @@ public class MemberController : ControllerBase
         }
     }
 
+    [HttpGet("inactive")]
+    public async Task<IActionResult> GetInactive()
+    {
+        try
+        {
+            var result = await _memberService.GetInactiveAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving inactive members.", error = ex.Message });
+        }
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -90,6 +104,38 @@ public class MemberController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "An error occurred while deleting the member.", error = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:guid}/deactivate")]
+    [Authorize(Roles = "Owner,Manager")]
+    public async Task<IActionResult> Deactivate(Guid id)
+    {
+        try
+        {
+            var result = await _memberService.DeactivateAsync(id);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while deactivating the member.", error = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:guid}/reactivate")]
+    [Authorize(Roles = "Owner,Manager")]
+    public async Task<IActionResult> Reactivate(Guid id)
+    {
+        try
+        {
+            var result = await _memberService.ReactivateAsync(id);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while reactivating the member.", error = ex.Message });
         }
     }
 }

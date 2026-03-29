@@ -2,6 +2,7 @@ using GymSaaS.Application.DTOs.Tenant;
 using GymSaaS.Application.Interfaces;
 using GymSaaS.Domain.Entities;
 using GymSaaS.Persistence;
+using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 
 namespace GymSaaS.Application.Services;
@@ -59,5 +60,31 @@ public class TenantService : ITenantService
         {
             throw new Exception($"An error occurred while creating the tenant: {ex.Message}", ex);
         }
+    }
+
+    public async Task UpdateLogoAsync(Guid tenantId, string logoUrl)
+    {
+        var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId)
+            ?? throw new Exception("Tenant not found.");
+
+        tenant.LogoUrl = logoUrl;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<string?> GetLogoUrlAsync(Guid tenantId)
+    {
+        return await _context.Tenants
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.LogoUrl)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task ClearLogoAsync(Guid tenantId)
+    {
+        var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId)
+            ?? throw new Exception("Tenant not found.");
+
+        tenant.LogoUrl = null;
+        await _context.SaveChangesAsync();
     }
 }

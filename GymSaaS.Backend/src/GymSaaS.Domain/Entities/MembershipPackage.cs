@@ -8,6 +8,9 @@ public class MembershipPackage : BaseTenantEntity
     public string Branch { get; set; } = string.Empty;
     public string Status { get; set; } = "Active";
 
+    /// <summary>"Monthly" = separate payment each month | "FullPayment" = single upfront payment for the full duration</summary>
+    public string BillingFrequency { get; set; } = "Monthly";
+
     // Optional settings
     public string? Description { get; set; }
     public int? MaxVisits { get; set; }

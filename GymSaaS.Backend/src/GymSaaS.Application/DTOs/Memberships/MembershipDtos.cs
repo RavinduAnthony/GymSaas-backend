@@ -9,6 +9,8 @@ public class CreateMembershipDto
     public decimal Price { get; set; }
     public decimal Discount { get; set; }
     public string PaymentStatus { get; set; } = "Pending";
+    /// <summary>One-time registration fee (0 if waived).</summary>
+    public decimal RegistrationFee { get; set; } = 0;
 }
 
 public class UpdateMembershipDto

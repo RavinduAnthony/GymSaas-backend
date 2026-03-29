@@ -45,6 +45,7 @@ public class PackageService
                 TrainerIncluded = dto.TrainerIncluded,
                 FreezeDays = dto.FreezeDays,
                 DiscountAllowed = dto.DiscountAllowed,
+                BillingFrequency = dto.BillingFrequency,
             };
 
             await _packageRepo.AddAsync(package);
@@ -75,6 +76,7 @@ public class PackageService
             package.TrainerIncluded = dto.TrainerIncluded;
             package.FreezeDays = dto.FreezeDays;
             package.DiscountAllowed = dto.DiscountAllowed;
+            package.BillingFrequency = dto.BillingFrequency;
 
             _packageRepo.Update(package);
             await _packageRepo.SaveChangesAsync();
@@ -119,6 +121,7 @@ public class PackageService
         TrainerIncluded = p.TrainerIncluded,
         FreezeDays = p.FreezeDays,
         DiscountAllowed = p.DiscountAllowed,
+        BillingFrequency = p.BillingFrequency,
         CreatedAt = p.CreatedAt,
     };
 }

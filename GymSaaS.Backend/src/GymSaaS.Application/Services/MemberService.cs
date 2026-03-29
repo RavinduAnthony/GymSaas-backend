@@ -9,17 +9,33 @@ namespace GymSaaS.Application.Services;
 public class MemberService : IMemberService
 {
     private readonly IRepository<Member> _memberRepo;
+    private readonly IRepository<MemberDeletionLog> _deletionLogRepo;
 
-    public MemberService(IRepository<Member> memberRepo)
+    public MemberService(IRepository<Member> memberRepo, IRepository<MemberDeletionLog> deletionLogRepo)
     {
         _memberRepo = memberRepo;
+        _deletionLogRepo = deletionLogRepo;
     }
 
     public async Task<ApiResponse<IEnumerable<MemberResponseDto>>> GetAllAsync()
     {
         try
         {
-            var members = await _memberRepo.GetAllAsync();
+            var members = await _memberRepo.FindAsync(m => m.Status != "Inactive");
+            var dtos = members.Select(MapToDto);
+            return ApiResponse<IEnumerable<MemberResponseDto>>.Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<IEnumerable<MemberResponseDto>>.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<IEnumerable<MemberResponseDto>>> GetInactiveAsync()
+    {
+        try
+        {
+            var members = await _memberRepo.FindAsync(m => m.Status == "Inactive");
             var dtos = members.Select(MapToDto);
             return ApiResponse<IEnumerable<MemberResponseDto>>.Ok(dtos);
         }
@@ -117,10 +133,64 @@ public class MemberService : IMemberService
             var member = await _memberRepo.GetByIdAsync(id);
             if (member == null) return ApiResponse.Fail("Member not found.");
 
+            // Snapshot member details before hard-deleting
+            var log = new MemberDeletionLog
+            {
+                OriginalMemberId = member.Id,
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                Phone = member.Phone,
+                Email = member.Email,
+                Gender = member.Gender,
+                DateOfBirth = member.DateOfBirth,
+                JoinDate = member.JoinDate,
+                DeletedAt = DateTime.UtcNow,
+            };
+            await _deletionLogRepo.AddAsync(log);
+
             _memberRepo.Delete(member);
             await _memberRepo.SaveChangesAsync();
 
-            return ApiResponse.Ok("Member deleted successfully.");
+            return ApiResponse.Ok("Member permanently deleted.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse> DeactivateAsync(Guid id)
+    {
+        try
+        {
+            var member = await _memberRepo.GetByIdAsync(id);
+            if (member == null) return ApiResponse.Fail("Member not found.");
+
+            member.Status = "Inactive";
+            _memberRepo.Update(member);
+            await _memberRepo.SaveChangesAsync();
+
+            return ApiResponse.Ok("Member deactivated successfully.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse> ReactivateAsync(Guid id)
+    {
+        try
+        {
+            var member = await _memberRepo.GetByIdAsync(id);
+            if (member == null) return ApiResponse.Fail("Member not found.");
+            if (member.Status != "Inactive") return ApiResponse.Fail("Member is not deactivated.");
+
+            member.Status = "Active";
+            _memberRepo.Update(member);
+            await _memberRepo.SaveChangesAsync();
+
+            return ApiResponse.Ok("Member reactivated successfully.");
         }
         catch (Exception ex)
         {
