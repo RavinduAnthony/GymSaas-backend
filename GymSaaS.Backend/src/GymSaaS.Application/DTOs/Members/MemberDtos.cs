@@ -36,6 +36,8 @@ public class MemberResponseDto
     public string Branch { get; set; } = string.Empty;
     public string? BranchName { get; set; }
     public string Status { get; set; } = string.Empty;
+    /// <summary>"Monthly" = Type A | "Special" = Type B</summary>
+    public string MemberType { get; set; } = "Monthly";
     public string? Email { get; set; }
     public string? EmergencyContact { get; set; }
     public string? Address { get; set; }

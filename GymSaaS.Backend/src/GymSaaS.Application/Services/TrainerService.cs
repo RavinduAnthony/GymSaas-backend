@@ -1,4 +1,5 @@
 using GymSaaS.Application.DTOs.Trainers;
+using GymSaaS.Application.Interfaces;
 using GymSaaS.Domain.Entities;
 using GymSaaS.Domain.Interfaces;
 using GymSaaS.Shared;
@@ -10,19 +11,26 @@ public class TrainerService
 {
     private readonly IRepository<Trainer> _trainerRepo;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public TrainerService(IRepository<Trainer> trainerRepo, ITenantProvider tenantProvider)
+    public TrainerService(
+        IRepository<Trainer> trainerRepo,
+        ITenantProvider tenantProvider,
+        ICloudinaryService cloudinaryService)
     {
         _trainerRepo = trainerRepo;
         _tenantProvider = tenantProvider;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<ApiResponse<IEnumerable<TrainerResponseDto>>> GetAllAsync()
     {
         try
         {
-            var trainers = await _trainerRepo.GetAllAsync();
-            // Eager load Branch navigation for name resolution — if repo supports queryable, use Include.
+            var trainers = await _trainerRepo.AsQueryable()
+                .Include(t => t.TrainerType)
+                .Include(t => t.Branch)
+                .ToListAsync();
             return ApiResponse<IEnumerable<TrainerResponseDto>>.Ok(trainers.Select(MapToDto));
         }
         catch (Exception ex)
@@ -35,7 +43,10 @@ public class TrainerService
     {
         try
         {
-            var trainer = await _trainerRepo.GetByIdAsync(id);
+            var trainer = await _trainerRepo.AsQueryable()
+                .Include(t => t.TrainerType)
+                .Include(t => t.Branch)
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (trainer == null) return ApiResponse<TrainerResponseDto>.Fail("Trainer not found.");
             return ApiResponse<TrainerResponseDto>.Ok(MapToDto(trainer));
         }
@@ -58,7 +69,10 @@ public class TrainerService
                 Email = dto.Email,
                 Specialization = dto.Specialization,
                 BranchId = dto.BranchId,
+                TrainerTypeId = dto.TrainerTypeId,
                 DateOfBirth = dto.DateOfBirth,
+                Age = CalculateAge(dto.DateOfBirth),
+                Photo = dto.PhotoUrl,
                 Certifications = dto.Certifications,
                 ExperienceYears = dto.ExperienceYears,
                 Availability = dto.Availability,
@@ -67,7 +81,12 @@ public class TrainerService
             await _trainerRepo.AddAsync(trainer);
             await _trainerRepo.SaveChangesAsync();
 
-            return ApiResponse<TrainerResponseDto>.Ok(MapToDto(trainer), "Trainer created.");
+            var created = await _trainerRepo.AsQueryable()
+                .Include(t => t.TrainerType)
+                .Include(t => t.Branch)
+                .FirstOrDefaultAsync(t => t.Id == trainer.Id);
+
+            return ApiResponse<TrainerResponseDto>.Ok(MapToDto(created!), "Trainer created.");
         }
         catch (Exception ex)
         {
@@ -88,8 +107,12 @@ public class TrainerService
             trainer.Email = dto.Email;
             trainer.Specialization = dto.Specialization;
             trainer.BranchId = dto.BranchId;
+            trainer.TrainerTypeId = dto.TrainerTypeId;
             trainer.Status = dto.Status;
             trainer.DateOfBirth = dto.DateOfBirth;
+            trainer.Age = CalculateAge(dto.DateOfBirth);
+            if (dto.PhotoUrl != null)
+                trainer.Photo = dto.PhotoUrl;
             trainer.Certifications = dto.Certifications;
             trainer.ExperienceYears = dto.ExperienceYears;
             trainer.Availability = dto.Availability;
@@ -97,7 +120,12 @@ public class TrainerService
             _trainerRepo.Update(trainer);
             await _trainerRepo.SaveChangesAsync();
 
-            return ApiResponse<TrainerResponseDto>.Ok(MapToDto(trainer), "Trainer updated.");
+            var updated = await _trainerRepo.AsQueryable()
+                .Include(t => t.TrainerType)
+                .Include(t => t.Branch)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            return ApiResponse<TrainerResponseDto>.Ok(MapToDto(updated!), "Trainer updated.");
         }
         catch (Exception ex)
         {
@@ -123,6 +151,29 @@ public class TrainerService
         }
     }
 
+    public async Task<ApiResponse> DeletePhotoAsync(Guid id)
+    {
+        try
+        {
+            var trainer = await _trainerRepo.GetByIdAsync(id);
+            if (trainer == null) return ApiResponse.Fail("Trainer not found.");
+
+            if (!string.IsNullOrEmpty(trainer.Photo))
+            {
+                await _cloudinaryService.DeleteImageByUrlAsync(trainer.Photo);
+                trainer.Photo = null;
+                _trainerRepo.Update(trainer);
+                await _trainerRepo.SaveChangesAsync();
+            }
+
+            return ApiResponse.Ok("Trainer photo deleted.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
     private static TrainerResponseDto MapToDto(Trainer t) => new()
     {
         Id = t.Id,
@@ -134,11 +185,37 @@ public class TrainerService
         Branch = t.Branch?.Name ?? string.Empty,
         BranchId = t.BranchId,
         BranchName = t.Branch?.Name,
+        TrainerTypeId = t.TrainerTypeId,
+        TrainerTypeName = t.TrainerType?.Name,
         Status = t.Status,
         ExperienceYears = t.ExperienceYears,
         Certifications = t.Certifications,
         Availability = t.Availability,
         DateOfBirth = t.DateOfBirth,
+        Age = CalculateAge(t.DateOfBirth),
+        Photo = t.Photo,
         CreatedAt = t.CreatedAt,
     };
+
+    private static string? CalculateAge(DateTime? dateOfBirth)
+    {
+        if (!dateOfBirth.HasValue) return null;
+
+        var today = DateTime.Today;
+        var dob = dateOfBirth.Value.Date;
+
+        var years = today.Year - dob.Year;
+        var months = today.Month - dob.Month;
+
+        if (today.Day < dob.Day)
+            months--;
+
+        if (months < 0)
+        {
+            years--;
+            months += 12;
+        }
+
+        return $"{years} year{(years != 1 ? "s" : "")}, {months} month{(months != 1 ? "s" : "")}";
+    }
 }

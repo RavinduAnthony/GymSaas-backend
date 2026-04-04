@@ -1,4 +1,4 @@
-namespace GymSaaS.Shared;
+﻿namespace GymSaaS.Shared;
 
 public static class AppConstants
 {
@@ -22,8 +22,16 @@ public static class AppConstants
     /// </summary>
     public static class PaymentTypeIds
     {
-        public const int RegistrationFee = 1;
-        public const int MonthlyInitial  = 2;
-        public const int RegularMonthly  = 3;
+        public const int RegistrationFee    = 1;
+        public const int MonthlyInitial     = 2;
+        public const int RegularMonthly     = 3;
+        public const int LateMonthly        = 4; // Paid in Week 2-4 of due month
+        public const int FullPackagePayment = 5; // Single upfront payment for full package duration
+    }
+
+    public static class MemberTypes
+    {
+        public const string Monthly = "Monthly"; // Type A - regular monthly billing
+        public const string Special = "Special"; // Type B - full upfront / special package
     }
 }

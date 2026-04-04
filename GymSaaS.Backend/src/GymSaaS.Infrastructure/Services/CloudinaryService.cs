@@ -24,7 +24,7 @@ public class CloudinaryService : ICloudinaryService
         _cloudinary = new global::CloudinaryDotNet.Cloudinary(account) { Api = { Secure = true } };
     }
 
-    public async Task<string> UploadImageAsync(Stream fileStream, string fileName, string contentType, string tenantId, string category)
+    public async Task<string> UploadImageAsync(Stream fileStream, string fileName, string contentType, string tenantId, string category, string? uniqueId = null)
     {
         if (fileStream == null || fileStream.Length == 0)
             throw new ArgumentException("No file provided.");
@@ -35,13 +35,15 @@ public class CloudinaryService : ICloudinaryService
         if (!AllowedContentTypes.Contains(contentType))
             throw new ArgumentException("Only JPEG, PNG, or WebP images are allowed.");
 
+        var publicId = uniqueId != null ? $"{category}-{uniqueId}" : $"{category}-logo";
+
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(fileName, fileStream),
             Folder = $"gym-saas/{tenantId}/{category}",
-            Overwrite = true,
+            Overwrite = uniqueId == null,
             UniqueFilename = false,
-            PublicId = $"{category}-logo"
+            PublicId = publicId
         };
 
         var result = await _cloudinary.UploadAsync(uploadParams);
@@ -56,6 +58,34 @@ public class CloudinaryService : ICloudinaryService
     {
         // PublicId is the full path without the cloud name
         var publicId = $"gym-saas/{tenantId}/{category}/{category}-logo";
+        var deleteParams = new DeletionParams(publicId) { ResourceType = ResourceType.Image };
+        var result = await _cloudinary.DestroyAsync(deleteParams);
+
+        if (result.Error != null)
+            throw new Exception($"Cloudinary delete failed: {result.Error.Message}");
+    }
+
+    public async Task DeleteImageByUrlAsync(string photoUrl)
+    {
+        // Extract public ID from a Cloudinary URL.
+        // URL format: https://res.cloudinary.com/{cloud}/image/upload/v{ver}/{public_id}.{ext}
+        var marker = "/upload/";
+        var idx = photoUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) throw new ArgumentException("Not a valid Cloudinary URL.");
+
+        var afterUpload = photoUrl[(idx + marker.Length)..];
+
+        // Strip optional version segment like "v1234567890/"
+        if (afterUpload.StartsWith('v') && afterUpload.IndexOf('/') is int slashIdx && slashIdx > 1
+            && int.TryParse(afterUpload[1..slashIdx], out _))
+        {
+            afterUpload = afterUpload[(slashIdx + 1)..];
+        }
+
+        // Strip file extension
+        var dotIdx = afterUpload.LastIndexOf('.');
+        var publicId = dotIdx >= 0 ? afterUpload[..dotIdx] : afterUpload;
+
         var deleteParams = new DeletionParams(publicId) { ResourceType = ResourceType.Image };
         var result = await _cloudinary.DestroyAsync(deleteParams);
 

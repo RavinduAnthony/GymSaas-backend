@@ -1,4 +1,4 @@
-using GymSaaS.Application.DTOs.Payments;
+ï»¿using GymSaaS.Application.DTOs.Payments;
 using GymSaaS.Domain.Entities;
 using GymSaaS.Domain.Interfaces;
 using GymSaaS.Shared;
@@ -240,8 +240,14 @@ public class PaymentService
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var monthEnd = monthStart.AddMonths(1);
+            var yearStart = new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var yearEnd = yearStart.AddYears(1);
+            var currentMonthStr = now.ToString("yyyy-MM");
 
             var totalRevenue = payments.Sum(p => p.Amount);
+            var thisYearRevenue = payments
+                .Where(p => p.Date >= yearStart && p.Date < yearEnd)
+                .Sum(p => p.Amount);
             var thisMonthRevenue = payments
                 .Where(p => p.Date >= monthStart && p.Date < monthEnd)
                 .Sum(p => p.Amount);
@@ -254,6 +260,7 @@ public class PaymentService
             return ApiResponse<PaymentDashboardSummaryDto>.Ok(new PaymentDashboardSummaryDto
             {
                 TotalRevenue = totalRevenue,
+                ThisYearRevenue = thisYearRevenue,
                 ThisMonthRevenue = thisMonthRevenue,
                 PendingCount = pending.Count,
                 PendingAmount = pending.Sum(s => s.Amount),
@@ -284,17 +291,66 @@ public class PaymentService
 
             var paidDate = (dto.PaidDate?.ToUniversalTime() ?? DateTime.UtcNow);
 
-            // Late rule: paid after the 7th of the schedule's due month
-            var cutoff = new DateTime(schedule.DueDate.Year, schedule.DueDate.Month, 7, 23, 59, 59, DateTimeKind.Utc);
-            bool isLate = paidDate > cutoff;
-            var status = isLate ? "Late" : "Paid";
+            // -- Classify by payment type ------------------------------------------
+            bool isRegistrationFee    = schedule.PaymentTypeId == AppConstants.PaymentTypeIds.RegistrationFee;
+            bool isInitialPayment     = schedule.PaymentTypeId == AppConstants.PaymentTypeIds.MonthlyInitial;
+            bool isFullPackagePayment = schedule.PaymentTypeId == AppConstants.PaymentTypeIds.FullPackagePayment;
+
+            string status;
+            int finalPaymentTypeId = schedule.PaymentTypeId;
+            string message;
+
+            if (isRegistrationFee || isInitialPayment || isFullPackagePayment)
+            {
+                // No late/regular concept for these types
+                status = "Paid";
+                message = isRegistrationFee    ? "Registration fee recorded successfully."
+                        : isFullPackagePayment  ? "Full package payment recorded successfully."
+                        : "Initial payment recorded successfully.";
+            }
+            else
+            {
+                // Type A recurring monthly: week-based classification
+                // Week 1 (days 1-7)  => Regular, Status = Paid
+                // Week 2-4 (days 8+) => Late,    Status = Late; reclassify PaymentTypeId
+
+                // Duplicate-payment guard: one payment per billing month per member
+                var existingPaid = await _scheduleRepo.FindAsync(s =>
+                    s.MemberId == schedule.MemberId &&
+                    s.Month == schedule.Month &&
+                    s.Id != schedule.Id &&
+                    (s.Status == "Paid" || s.Status == "Late") &&
+                    s.PaymentTypeId != AppConstants.PaymentTypeIds.RegistrationFee &&
+                    s.PaymentTypeId != AppConstants.PaymentTypeIds.MonthlyInitial &&
+                    s.PaymentTypeId != AppConstants.PaymentTypeIds.FullPackagePayment);
+
+                if (existingPaid.Any())
+                    return ApiResponse<PaymentScheduleDto>.Fail(
+                        $"A payment for billing month {schedule.Month} is already recorded for this member.");
+
+                int week = GetWeekOfMonth(paidDate);
+                bool isLate = week > 1;
+
+                if (isLate)
+                {
+                    status = "Late";
+                    finalPaymentTypeId = AppConstants.PaymentTypeIds.LateMonthly;
+                    message = $"Payment recorded -- LATE (Week {week}, day {paidDate.Day}).";
+                }
+                else
+                {
+                    status = "Paid";
+                    message = "Payment recorded -- Regular (Week 1).";
+                }
+            }
 
             schedule.Status = status;
             schedule.PaidDate = paidDate;
+            schedule.PaymentTypeId = finalPaymentTypeId;
             if (!string.IsNullOrWhiteSpace(dto.Notes)) schedule.Notes = dto.Notes;
             _scheduleRepo.Update(schedule);
 
-            // Look up plan name
+            // Resolve plan name
             var membership = await _membershipRepo.GetByIdAsync(schedule.MembershipId);
             var packageName = string.Empty;
             if (membership != null)
@@ -311,7 +367,7 @@ public class PaymentService
                 Amount = dto.Amount > 0 ? dto.Amount : schedule.Amount,
                 Date = paidDate,
                 PlanName = packageName,
-                PaymentTypeId = schedule.PaymentTypeId,
+                PaymentTypeId = finalPaymentTypeId,
                 Status = status,
                 Method = string.IsNullOrEmpty(dto.Method) ? "Cash" : dto.Method,
                 Notes = dto.Notes,
@@ -320,24 +376,29 @@ public class PaymentService
             await _scheduleRepo.SaveChangesAsync();
 
             var lookup = await BuildLookupAsync();
-            return ApiResponse<PaymentScheduleDto>.Ok(
-                MapToDto(schedule, lookup),
-                isLate ? "Payment recorded — marked as LATE (after 7th)." : "Payment recorded successfully.");
+            return ApiResponse<PaymentScheduleDto>.Ok(MapToDto(schedule, lookup), message);
         }
         catch (Exception ex)
         {
             return ApiResponse<PaymentScheduleDto>.Fail($"Error: {ex.Message}");
         }
     }
-
     // -------------------------------------------------------------------------
+    // Payment Types
+    // -------------------------------------------------------------------------
+
     public async Task<ApiResponse<IEnumerable<PaymentTypeDto>>> GetPaymentTypesAsync()
     {
         try
         {
             var types = await _paymentTypeRepo.GetAllAsync();
-            var dtos = types.Where(t => t.IsActive).OrderBy(t => t.Id)
-                .Select(t => new PaymentTypeDto { Id = t.Id, Name = t.Name, Description = t.Description, IsActive = t.IsActive });
+            var dtos = types.Where(t => t.IsActive).OrderBy(t => t.Id).Select(t => new PaymentTypeDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Description = t.Description,
+                IsActive = t.IsActive,
+            });
             return ApiResponse<IEnumerable<PaymentTypeDto>>.Ok(dtos);
         }
         catch (Exception ex)
@@ -346,79 +407,92 @@ public class PaymentService
         }
     }
 
+    // -------------------------------------------------------------------------
     // Late Status Refresh
     // -------------------------------------------------------------------------
 
-    public async Task<ApiResponse> RefreshLateStatusAsync()
+    public async Task<ApiResponse<string>> RefreshLateStatusAsync()
     {
         try
         {
             await RefreshLateStatusInternalAsync();
-            return ApiResponse.Ok("Late statuses refreshed.");
+            return ApiResponse<string>.Ok("Late status refreshed.");
         }
         catch (Exception ex)
         {
-            return ApiResponse.Fail($"Error: {ex.Message}");
+            return ApiResponse<string>.Fail($"Error: {ex.Message}");
         }
     }
 
     private async Task RefreshLateStatusInternalAsync()
     {
-        var now = DateTime.UtcNow;
-        var pending = await _scheduleRepo.FindAsync(s => s.Status == "Pending");
-        bool changed = false;
-        foreach (var s in pending)
+        var today = DateTime.UtcNow.Date;
+        var schedules = await _scheduleRepo.GetAllAsync();
+
+        // Only auto-mark RegularMonthly (3) as late - skip RegFee(1), Initial(2), FullPackagePayment(5)
+        var overdue = schedules.Where(s =>
+            s.Status == "Pending" &&
+            s.PaymentTypeId == GymSaaS.Shared.AppConstants.PaymentTypeIds.RegularMonthly &&
+            s.DueDate.Date < today).ToList();
+
+        foreach (var s in overdue)
         {
-            // Past the 7th of the due month and the due month/year has actually arrived
-            var cutoff = new DateTime(s.DueDate.Year, s.DueDate.Month, 7, 23, 59, 59, DateTimeKind.Utc);
-            if (now > cutoff)
-            {
-                s.Status = "Late";
-                _scheduleRepo.Update(s);
-                changed = true;
-            }
+            s.Status = "Late";
+            s.PaymentTypeId = GymSaaS.Shared.AppConstants.PaymentTypeIds.LateMonthly;
+            _scheduleRepo.Update(s);
         }
-        if (changed) await _scheduleRepo.SaveChangesAsync();
+
+        if (overdue.Count > 0)
+            await _scheduleRepo.SaveChangesAsync();
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    private async Task<(Dictionary<Guid, string> Members, Dictionary<Guid, string> Packages, Dictionary<int, string> Types)> BuildLookupAsync()
+    private async Task<(Dictionary<Guid, string> memberNames, Dictionary<int, string> typeNames, Dictionary<Guid, string> schedulePackageNames)> BuildLookupAsync()
     {
         var members = await _memberRepo.GetAllAsync();
+        var types = await _paymentTypeRepo.GetAllAsync();
         var memberships = await _membershipRepo.GetAllAsync();
         var packages = await _packageRepo.GetAllAsync();
-        var types = await _paymentTypeRepo.GetAllAsync();
-
-        var memberDict = members.ToDictionary(m => m.Id, m => $"{m.FirstName} {m.LastName}");
         var packageDict = packages.ToDictionary(p => p.Id, p => p.Name);
-        var msPackageMap = memberships.ToDictionary(
+        var memberNames = members.ToDictionary(m => m.Id, m => $"{m.FirstName} {m.LastName}");
+        var typeNames = types.ToDictionary(t => t.Id, t => t.Name);
+        var schedulePackageNames = memberships.ToDictionary(
             m => m.Id,
-            m => packageDict.TryGetValue(m.PackageId, out var n) ? n : "");
-        var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
-
-        return (memberDict, msPackageMap, typeDict);
+            m => packageDict.TryGetValue(m.PackageId, out var pn) ? pn : string.Empty);
+        return (memberNames, typeNames, schedulePackageNames);
     }
 
     private static PaymentScheduleDto MapToDto(
         PaymentSchedule s,
-        (Dictionary<Guid, string> Members, Dictionary<Guid, string> Packages, Dictionary<int, string> Types) lookup)
-        => new()
+        (Dictionary<Guid, string> memberNames, Dictionary<int, string> typeNames, Dictionary<Guid, string> schedulePackageNames) lookup)
+    {
+        return new PaymentScheduleDto
         {
             Id = s.Id,
             MemberId = s.MemberId,
-            MemberName = lookup.Members.TryGetValue(s.MemberId, out var mn) ? mn : "Unknown",
+            MemberName = lookup.memberNames.TryGetValue(s.MemberId, out var mn) ? mn : "Unknown",
             MembershipId = s.MembershipId,
-            PackageName = lookup.Packages.TryGetValue(s.MembershipId, out var pn) ? pn : "",
+            PackageName = lookup.schedulePackageNames.TryGetValue(s.MembershipId, out var pn) ? pn : string.Empty,
             DueDate = s.DueDate,
             Amount = s.Amount,
             Status = s.Status,
             PaymentTypeId = s.PaymentTypeId,
-            PaymentTypeName = lookup.Types.TryGetValue(s.PaymentTypeId, out var tn) ? tn : "",
+            PaymentTypeName = lookup.typeNames.TryGetValue(s.PaymentTypeId, out var tn) ? tn : "",
             PaidDate = s.PaidDate,
             Notes = s.Notes,
-            Month = s.Month,
+            Month = s.DueDate.ToString("yyyy-MM"),
         };
+    }
+
+    private static int GetWeekOfMonth(DateTime date)
+    {
+        int day = date.Day;
+        if (day <= 7)  return 1;
+        if (day <= 14) return 2;
+        if (day <= 21) return 3;
+        return 4;
+    }
 }

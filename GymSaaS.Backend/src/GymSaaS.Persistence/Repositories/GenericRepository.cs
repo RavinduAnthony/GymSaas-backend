@@ -33,6 +33,8 @@ public class GenericRepository<T> : IRepository<T> where T : class
         catch (Exception ex) { throw new Exception("Error finding entities matching the criteria.", ex); }
     }
 
+    public IQueryable<T> AsQueryable() => _dbSet.AsQueryable();
+
     public async Task AddAsync(T entity)
     {
         try { await _dbSet.AddAsync(entity); }

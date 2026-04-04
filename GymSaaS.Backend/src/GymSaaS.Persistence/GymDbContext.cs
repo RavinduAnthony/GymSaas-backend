@@ -29,6 +29,10 @@ public class GymDbContext : DbContext
     public DbSet<WorkingHours> WorkingHours { get; set; }
     public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
     public DbSet<PaymentType> PaymentTypes { get; set; }
+    public DbSet<TrainerType> TrainerTypes { get; set; }
+    public DbSet<ServiceSetting> ServiceSettings { get; set; }
+    public DbSet<GymClass> GymClasses { get; set; }
+    public DbSet<ClassType> ClassTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,6 +75,18 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Branch>()
             .HasQueryFilter(b => b.TenantId == _tenantProvider.TenantId);
 
+        modelBuilder.Entity<TrainerType>()
+            .HasQueryFilter(tt => tt.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<ServiceSetting>()
+            .HasQueryFilter(ss => ss.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<GymClass>()
+            .HasQueryFilter(gc => gc.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<ClassType>()
+            .HasQueryFilter(ct => ct.TenantId == _tenantProvider.TenantId);
+
         modelBuilder.Entity<WorkingHours>()
             .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);
 
@@ -110,6 +126,21 @@ public class GymDbContext : DbContext
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.HasOne(e => e.Branch).WithMany(b => b.Trainers).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.TrainerType).WithMany(tt => tt.Trainers).HasForeignKey(e => e.TrainerTypeId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<TrainerType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<ClassType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Branch>(entity =>
@@ -178,6 +209,18 @@ public class GymDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Member).WithMany(m => m.Attendances).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GymClass>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.StartTime).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.EndTime).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.DefaultAmount).HasColumnType("decimal(18,2)");
+            entity.HasOne(e => e.Instructor).WithMany().HasForeignKey(e => e.InstructorId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Branch).WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 

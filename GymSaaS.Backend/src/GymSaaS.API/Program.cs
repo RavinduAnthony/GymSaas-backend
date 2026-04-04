@@ -37,6 +37,10 @@ builder.Services.AddScoped<IRepository<Branch>, GenericRepository<Branch>>();
 builder.Services.AddScoped<IRepository<PaymentSchedule>, GenericRepository<PaymentSchedule>>();
 builder.Services.AddScoped<IRepository<PaymentType>, GenericRepository<PaymentType>>();
 builder.Services.AddScoped<IRepository<MemberDeletionLog>, GenericRepository<MemberDeletionLog>>();
+builder.Services.AddScoped<IRepository<TrainerType>, GenericRepository<TrainerType>>();
+builder.Services.AddScoped<IRepository<ServiceSetting>, GenericRepository<ServiceSetting>>();
+builder.Services.AddScoped<IRepository<GymClass>, GenericRepository<GymClass>>();
+builder.Services.AddScoped<IRepository<ClassType>, GenericRepository<ClassType>>();
 
 // ─── Application Services ────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -48,6 +52,10 @@ builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<BranchService>();
 builder.Services.AddScoped<WorkingHoursService>();
+builder.Services.AddScoped<TrainerTypeService>();
+builder.Services.AddScoped<ServiceSettingService>();
+builder.Services.AddScoped<IGymClassService, GymClassService>();
+builder.Services.AddScoped<ClassTypeService>();
 
 // ─── Infrastructure ──────────────────────────────────
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

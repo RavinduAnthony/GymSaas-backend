@@ -1,4 +1,4 @@
-namespace GymSaaS.Application.DTOs.Payments;
+﻿namespace GymSaaS.Application.DTOs.Payments;
 
 public class PaymentScheduleDto
 {
@@ -44,6 +44,7 @@ public class PaymentHistoryDto
 public class PaymentDashboardSummaryDto
 {
     public decimal TotalRevenue { get; set; }
+    public decimal ThisYearRevenue { get; set; }
     public decimal ThisMonthRevenue { get; set; }
     public int PendingCount { get; set; }
     public decimal PendingAmount { get; set; }

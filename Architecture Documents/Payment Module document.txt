@@ -1,0 +1,24 @@
+There are two separate member types when it comes to the payment management module
+	1. Monthly package member - A
+	2. Special package member - B
+
+Member - A
+* First do the registration fee and there is no late or regular pay scenarios for registration fee
+* then for the initial payment part
+	To identify the initial payment for a member, check whether any payment done by this member other than registration fee, If no then
+	it is the initial pay 
+* if the member done the initial payment in the 4th week of the month then that payment should be calculated for next month
+* If member done his payment in 1st,2nd or 3rd week then the payment should be considered for current month
+* After this initial payment for the upcoming months member should do the payment within 1st week of the month, then it is considered as a  regular payment
+* if the member done the payment in 2nd, 3rd or 4th week it must be considered as a late payment
+
+Member - B
+* First the member do the registration fee as usual
+* Then the member must do the full payment for selected package
+
+* In these packages payment considered by the initial payment date and package duration
+	ex: If the member do the initial payment on 2026-04-05 for 3 months package, then that amount is valid for package termination
+on 2026-07-05
+
+	1. Full payment
+* if the user do the full payment for special package then the payment is considered as a full settled payment

@@ -153,4 +153,3 @@ D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\BCrypt.Net-N
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\obj\Debug\net9.0\GymSaaS.API.sourcelink.json
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\CloudinaryDotNet.dll
 D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\bin\Debug\net9.0\Newtonsoft.Json.dll
-D:\Gym Application\GymSaaS.Backend\src\GymSaaS.API\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

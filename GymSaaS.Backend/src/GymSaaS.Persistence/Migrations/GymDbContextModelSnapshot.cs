@@ -127,6 +127,117 @@ namespace GymSaaS.Persistence.Migrations
                     b.ToTable("Branches");
                 });
 
+            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClassTypes");
+                });
+
+            modelBuilder.Entity("GymSaaS.Domain.Entities.GymClass", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("BatchEndDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("BatchStartDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("ClassTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("DaysOfWeek")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("DefaultAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EndTime")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("InstructorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaxCapacity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StartTime")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ClassTypeId");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("GymClasses");
+                });
+
             modelBuilder.Entity("GymSaaS.Domain.Entities.Member", b =>
                 {
                     b.Property<Guid>("Id")
@@ -172,6 +283,10 @@ namespace GymSaaS.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("MedicalConditions")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MemberType")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
@@ -259,11 +374,11 @@ namespace GymSaaS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Branch")
+                    b.Property<string>("BillingFrequency")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("BillingFrequency")
+                    b.Property<string>("Branch")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -503,6 +618,35 @@ namespace GymSaaS.Persistence.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("GymSaaS.Domain.Entities.ServiceSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("DefaultAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ServiceType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ServiceSettings");
+                });
+
             modelBuilder.Entity("GymSaaS.Domain.Entities.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -554,6 +698,9 @@ namespace GymSaaS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Age")
+                        .HasColumnType("text");
+
                     b.Property<string>("Availability")
                         .HasColumnType("text");
 
@@ -604,12 +751,17 @@ namespace GymSaaS.Persistence.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("TrainerTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("TrainerTypeId");
 
                     b.ToTable("Trainers");
                 });
@@ -641,6 +793,38 @@ namespace GymSaaS.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TrainerAssignments");
+                });
+
+            modelBuilder.Entity("GymSaaS.Domain.Entities.TrainerType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TrainerTypes");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.User", b =>
@@ -738,6 +922,27 @@ namespace GymSaaS.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("GymSaaS.Domain.Entities.GymClass", b =>
+                {
+                    b.HasOne("GymSaaS.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymSaaS.Domain.Entities.ClassType", null)
+                        .WithMany("GymClasses")
+                        .HasForeignKey("ClassTypeId");
+
+                    b.HasOne("GymSaaS.Domain.Entities.Trainer", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Member", b =>
@@ -842,7 +1047,14 @@ namespace GymSaaS.Persistence.Migrations
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("GymSaaS.Domain.Entities.TrainerType", "TrainerType")
+                        .WithMany("Trainers")
+                        .HasForeignKey("TrainerTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Branch");
+
+                    b.Navigation("TrainerType");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.User", b =>
@@ -861,6 +1073,11 @@ namespace GymSaaS.Persistence.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Trainers");
+                });
+
+            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassType", b =>
+                {
+                    b.Navigation("GymClasses");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Member", b =>
@@ -892,6 +1109,11 @@ namespace GymSaaS.Persistence.Migrations
             modelBuilder.Entity("GymSaaS.Domain.Entities.Trainer", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("GymSaaS.Domain.Entities.TrainerType", b =>
+                {
+                    b.Navigation("Trainers");
                 });
 #pragma warning restore 612, 618
         }

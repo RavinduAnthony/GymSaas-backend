@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GymSaaS.Application.DTOs.Trainers;
+using GymSaaS.Application.Interfaces;
 using GymSaaS.Application.Services;
+using GymSaaS.Domain.Interfaces;
 
 namespace GymSaaS.API.Controllers;
 
@@ -11,10 +13,17 @@ namespace GymSaaS.API.Controllers;
 public class TrainerController : ControllerBase
 {
     private readonly TrainerService _trainerService;
+    private readonly ICloudinaryService _cloudinaryService;
+    private readonly ITenantProvider _tenantProvider;
 
-    public TrainerController(TrainerService trainerService)
+    public TrainerController(
+        TrainerService trainerService,
+        ICloudinaryService cloudinaryService,
+        ITenantProvider tenantProvider)
     {
         _trainerService = trainerService;
+        _cloudinaryService = cloudinaryService;
+        _tenantProvider = tenantProvider;
     }
 
     [HttpGet]
@@ -47,11 +56,24 @@ public class TrainerController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Owner,Manager")]
-    public async Task<IActionResult> Create([FromBody] CreateTrainerDto dto)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Create([FromForm] CreateTrainerDto dto, [FromForm] IFormFile? photo)
     {
         try
         {
+            if (photo != null)
+            {
+                await using var stream = photo.OpenReadStream();
+                dto.PhotoUrl = await _cloudinaryService.UploadImageAsync(
+                    stream, photo.FileName, photo.ContentType,
+                    _tenantProvider.TenantId.ToString(), "trainers", Guid.NewGuid().ToString("N"));
+            }
+
             return Ok(await _trainerService.CreateAsync(dto));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -61,13 +83,26 @@ public class TrainerController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Owner,Manager")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTrainerDto dto)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Update(Guid id, [FromForm] UpdateTrainerDto dto, [FromForm] IFormFile? photo)
     {
         try
         {
+            if (photo != null)
+            {
+                await using var stream = photo.OpenReadStream();
+                dto.PhotoUrl = await _cloudinaryService.UploadImageAsync(
+                    stream, photo.FileName, photo.ContentType,
+                    _tenantProvider.TenantId.ToString(), "trainers", Guid.NewGuid().ToString("N"));
+            }
+
             var result = await _trainerService.UpdateAsync(id, dto);
             if (!result.Success) return NotFound(result);
             return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -88,6 +123,22 @@ public class TrainerController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "An error occurred while deleting the trainer.", error = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/photo")]
+    [Authorize(Roles = "Owner,Manager")]
+    public async Task<IActionResult> DeletePhoto(Guid id)
+    {
+        try
+        {
+            var result = await _trainerService.DeletePhotoAsync(id);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while deleting the trainer photo.", error = ex.Message });
         }
     }
 }

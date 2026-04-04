@@ -11,17 +11,20 @@ public class MembershipService
     private readonly IRepository<Membership> _membershipRepo;
     private readonly IRepository<Payment> _paymentRepo;
     private readonly IRepository<MembershipPackage> _packageRepo;
+    private readonly IRepository<Member> _memberRepo;
     private readonly PaymentService _paymentService;
 
     public MembershipService(
         IRepository<Membership> membershipRepo,
         IRepository<Payment> paymentRepo,
         IRepository<MembershipPackage> packageRepo,
+        IRepository<Member> memberRepo,
         PaymentService paymentService)
     {
         _membershipRepo = membershipRepo;
         _paymentRepo = paymentRepo;
         _packageRepo = packageRepo;
+        _memberRepo = memberRepo;
         _paymentService = paymentService;
     }
 
@@ -104,11 +107,23 @@ public class MembershipService
                                   + (dto.EndDate.Month - dto.StartDate.Month);
             if (durationMonths <= 0) durationMonths = 1;
 
-            // Generate payment schedule (monthly obligations + registration fee if any)
+            // Generate payment schedule (correct path chosen via billingFrequency)
             await _paymentService.GenerateScheduleAsync(
                 membership.Id, dto.MemberId,
                 durationMonths, dto.Price, dto.RegistrationFee,
                 package?.BillingFrequency ?? "Monthly");
+
+            // Auto-set MemberType on the member based on the package billing mode
+            // "FullPayment" package => Type B (Special) | "Monthly" => Type A (Monthly)
+            var member = await _memberRepo.GetByIdAsync(dto.MemberId);
+            if (member != null)
+            {
+                member.MemberType = package?.BillingFrequency == "FullPayment"
+                    ? AppConstants.MemberTypes.Special
+                    : AppConstants.MemberTypes.Monthly;
+                _memberRepo.Update(member);
+                await _memberRepo.SaveChangesAsync();
+            }
 
             // If paid at registration, immediately mark initial payments as Paid
             if (string.Equals(dto.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))

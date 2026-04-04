@@ -210,6 +210,7 @@ public class MemberService : IMemberService
         BranchId = m.BranchId,
         BranchName = m.Branch?.Name,
         Status = m.Status,
+        MemberType = m.MemberType,
         Email = m.Email,
         EmergencyContact = m.EmergencyContact,
         Address = m.Address,

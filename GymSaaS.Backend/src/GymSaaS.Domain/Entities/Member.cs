@@ -21,6 +21,13 @@ public class Member : BaseTenantEntity
     public string? MedicalConditions { get; set; }
     public string? Photo { get; set; }
 
+    /// <summary>
+    /// "Monthly" = Type A (monthly recurring, regular/late rules apply).
+    /// "Special"  = Type B (full upfront package, no late concept).
+    /// Auto-populated from the assigned package's BillingFrequency.
+    /// </summary>
+    public string MemberType { get; set; } = "Monthly";
+
     // Navigation
     public Guid? TrainerId { get; set; }
     public Trainer? Trainer { get; set; }
