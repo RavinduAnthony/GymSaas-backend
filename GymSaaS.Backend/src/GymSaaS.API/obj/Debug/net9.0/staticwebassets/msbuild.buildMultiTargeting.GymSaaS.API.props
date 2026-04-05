@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\GymSaaS.API.props" />
-</Project>
