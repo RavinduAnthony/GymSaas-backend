@@ -116,6 +116,8 @@ public class GymDbContext : DbContext
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.MembershipNumber).IsRequired().HasMaxLength(20);
+            entity.HasIndex(e => new { e.TenantId, e.MembershipNumber }).IsUnique();
             entity.HasOne(e => e.Trainer).WithMany(t => t.Members).HasForeignKey(e => e.TrainerId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.Branch).WithMany(b => b.Members).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
         });

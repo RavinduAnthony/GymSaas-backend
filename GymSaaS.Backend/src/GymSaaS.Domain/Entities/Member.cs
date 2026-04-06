@@ -12,6 +12,9 @@ public class Member : BaseTenantEntity
     public Guid? BranchId { get; set; }
     public string Status { get; set; } = "Active";
 
+    /// <summary>Zero-padded sequential number unique per tenant. e.g. "0001"</summary>
+    public string MembershipNumber { get; set; } = string.Empty;
+
     // Optional
     public string? Email { get; set; }
     public string? EmergencyContact { get; set; }

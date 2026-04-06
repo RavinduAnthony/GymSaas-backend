@@ -63,6 +63,19 @@ public class MemberService : IMemberService
     {
         try
         {
+            // Generate next sequential membership number for this tenant
+            var existingNumbers = await Task.FromResult(
+                _memberRepo.AsQueryable()
+                    .Select(m => m.MembershipNumber)
+                    .ToList()
+            );
+            var maxNum = existingNumbers
+                .Where(n => !string.IsNullOrWhiteSpace(n) && n.All(char.IsDigit))
+                .Select(int.Parse)
+                .DefaultIfEmpty(0)
+                .Max();
+            var membershipNumber = (maxNum + 1).ToString("D4");
+
             var member = new Member
             {
                 FirstName = dto.FirstName,
@@ -79,6 +92,7 @@ public class MemberService : IMemberService
                 Weight = dto.Weight,
                 MedicalConditions = dto.MedicalConditions,
                 TrainerId = dto.TrainerId,
+                MembershipNumber = membershipNumber,
             };
 
             await _memberRepo.AddAsync(member);
@@ -218,6 +232,7 @@ public class MemberService : IMemberService
         Weight = m.Weight,
         MedicalConditions = m.MedicalConditions,
         TrainerId = m.TrainerId,
+        MembershipNumber = m.MembershipNumber,
         CreatedAt = m.CreatedAt,
     };
 }

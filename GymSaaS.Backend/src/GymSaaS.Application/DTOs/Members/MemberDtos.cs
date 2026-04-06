@@ -45,5 +45,6 @@ public class MemberResponseDto
     public double? Weight { get; set; }
     public string? MedicalConditions { get; set; }
     public Guid? TrainerId { get; set; }
+    public string MembershipNumber { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 }
