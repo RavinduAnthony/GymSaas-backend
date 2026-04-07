@@ -33,6 +33,7 @@ public class GymDbContext : DbContext
     public DbSet<ServiceSetting> ServiceSettings { get; set; }
     public DbSet<GymClass> GymClasses { get; set; }
     public DbSet<ClassType> ClassTypes { get; set; }
+    public DbSet<ClassSchedule> ClassSchedules { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +87,9 @@ public class GymDbContext : DbContext
 
         modelBuilder.Entity<ClassType>()
             .HasQueryFilter(ct => ct.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<ClassSchedule>()
+            .HasQueryFilter(cs => cs.TenantId == _tenantProvider.TenantId);
 
         modelBuilder.Entity<WorkingHours>()
             .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);
@@ -218,11 +222,20 @@ public class GymDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Category).HasMaxLength(100);
-            entity.Property(e => e.StartTime).IsRequired().HasMaxLength(10);
-            entity.Property(e => e.EndTime).IsRequired().HasMaxLength(10);
             entity.Property(e => e.DefaultAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.HourlyRate).HasColumnType("decimal(18,2)");
             entity.HasOne(e => e.Instructor).WithMany().HasForeignKey(e => e.InstructorId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.Branch).WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ClassSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DayOfWeek).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.StartTime).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.EndTime).IsRequired().HasMaxLength(10);
+            entity.HasOne(e => e.Branch).WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.GymClass).WithMany(gc => gc.Schedules).HasForeignKey(e => e.GymClassId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 

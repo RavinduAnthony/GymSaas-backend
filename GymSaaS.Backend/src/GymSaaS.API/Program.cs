@@ -41,6 +41,7 @@ builder.Services.AddScoped<IRepository<TrainerType>, GenericRepository<TrainerTy
 builder.Services.AddScoped<IRepository<ServiceSetting>, GenericRepository<ServiceSetting>>();
 builder.Services.AddScoped<IRepository<GymClass>, GenericRepository<GymClass>>();
 builder.Services.AddScoped<IRepository<ClassType>, GenericRepository<ClassType>>();
+builder.Services.AddScoped<IRepository<ClassSchedule>, GenericRepository<ClassSchedule>>();
 
 // ─── Application Services ────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -56,6 +57,7 @@ builder.Services.AddScoped<TrainerTypeService>();
 builder.Services.AddScoped<ServiceSettingService>();
 builder.Services.AddScoped<IGymClassService, GymClassService>();
 builder.Services.AddScoped<ClassTypeService>();
+builder.Services.AddScoped<IClassTimeSlotService, ClassTimeSlotService>();
 
 // ─── Infrastructure ──────────────────────────────────
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

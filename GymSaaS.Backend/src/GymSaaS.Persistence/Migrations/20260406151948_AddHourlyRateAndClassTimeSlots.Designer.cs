@@ -3,6 +3,7 @@ using System;
 using GymSaaS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymSaaS.Persistence.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260406151948_AddHourlyRateAndClassTimeSlots")]
+    partial class AddHourlyRateAndClassTimeSlots
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -127,7 +130,7 @@ namespace GymSaaS.Persistence.Migrations
                     b.ToTable("Branches");
                 });
 
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassSchedule", b =>
+            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassTimeSlot", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -169,7 +172,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("GymClassId");
 
-                    b.ToTable("ClassSchedules");
+                    b.ToTable("ClassTimeSlots");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ClassType", b =>
@@ -210,10 +213,10 @@ namespace GymSaaS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("BatchEndDate")
+                    b.Property<DateTime>("BatchEndDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime?>("BatchStartDate")
+                    b.Property<DateTime>("BatchStartDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid?>("BranchId")
@@ -229,11 +232,22 @@ namespace GymSaaS.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("DaysOfWeek")
+                        .HasColumnType("text");
+
                     b.Property<decimal>("DefaultAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EndTime")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<decimal>("HourlyRate")
                         .HasColumnType("decimal(18,2)");
@@ -248,6 +262,11 @@ namespace GymSaaS.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StartTime")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -964,7 +983,7 @@ namespace GymSaaS.Persistence.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassSchedule", b =>
+            modelBuilder.Entity("GymSaaS.Domain.Entities.ClassTimeSlot", b =>
                 {
                     b.HasOne("GymSaaS.Domain.Entities.Branch", "Branch")
                         .WithMany()
@@ -973,7 +992,7 @@ namespace GymSaaS.Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("GymSaaS.Domain.Entities.GymClass", "GymClass")
-                        .WithMany("Schedules")
+                        .WithMany("TimeSlots")
                         .HasForeignKey("GymClassId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1141,7 +1160,7 @@ namespace GymSaaS.Persistence.Migrations
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.GymClass", b =>
                 {
-                    b.Navigation("Schedules");
+                    b.Navigation("TimeSlots");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Member", b =>
