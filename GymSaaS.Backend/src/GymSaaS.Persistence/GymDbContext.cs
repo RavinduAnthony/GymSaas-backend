@@ -34,6 +34,9 @@ public class GymDbContext : DbContext
     public DbSet<GymClass> GymClasses { get; set; }
     public DbSet<ClassType> ClassTypes { get; set; }
     public DbSet<ClassSchedule> ClassSchedules { get; set; }
+    public DbSet<PtRegistration> PtRegistrations { get; set; }
+    public DbSet<AppRole> AppRoles { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -90,6 +93,18 @@ public class GymDbContext : DbContext
 
         modelBuilder.Entity<ClassSchedule>()
             .HasQueryFilter(cs => cs.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<PtRegistration>()
+            .HasQueryFilter(pr => pr.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<AppRole>()
+            .HasQueryFilter(ar => ar.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasQueryFilter(rp => rp.TenantId == _tenantProvider.TenantId);
+            entity.HasIndex(rp => new { rp.TenantId, rp.RoleName, rp.PermissionKey }).IsUnique();
+        });
 
         modelBuilder.Entity<WorkingHours>()
             .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);

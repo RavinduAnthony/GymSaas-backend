@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly GymDbContext _context;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly RoleService _roleService;
 
-    public AuthService(GymDbContext context, IJwtTokenService jwtTokenService)
+    public AuthService(GymDbContext context, IJwtTokenService jwtTokenService, RoleService roleService)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
+        _roleService = roleService;
     }
 
     public async Task<ApiResponse<AuthResponseDto>> RegisterTenantAsync(RegisterTenantDto dto)
@@ -63,6 +65,9 @@ public class AuthService : IAuthService
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
+
+            // Seed 4 system roles + default permission matrix for this new tenant
+            await _roleService.SeedSystemRolesAsync(tenant.Id);
 
             var token = _jwtTokenService.GenerateToken(user);
 

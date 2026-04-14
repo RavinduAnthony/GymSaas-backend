@@ -19,13 +19,16 @@ public class JwtTokenService : IJwtTokenService
 
     public string GenerateToken(User user)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim("UserId", user.Id.ToString()),
             new Claim("TenantId", user.TenantId.ToString()),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
         };
+
+        if (!string.IsNullOrEmpty(user.CustomRole))
+            claims.Add(new Claim("CustomRole", user.CustomRole));
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
