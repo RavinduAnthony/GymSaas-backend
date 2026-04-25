@@ -116,10 +116,11 @@ public class AuthService : IAuthService
 
             return ApiResponse<AuthResponseDto>.Ok(new AuthResponseDto
             {
-                Token = token,
-                UserId = user.Id.ToString(),
-                TenantId = user.TenantId.ToString(),
-                Role = user.Role.ToString(),
+                Token                = token,
+                UserId               = user.Id.ToString(),
+                TenantId             = user.TenantId.ToString(),
+                Role                 = user.Role.ToString(),
+                IsTemporaryPassword  = user.IsTemporaryPassword,
             });
         }
         catch (Exception ex)

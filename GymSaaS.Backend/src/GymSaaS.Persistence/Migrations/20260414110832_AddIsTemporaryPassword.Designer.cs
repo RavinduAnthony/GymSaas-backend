@@ -3,6 +3,7 @@ using System;
 using GymSaaS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymSaaS.Persistence.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414110832_AddIsTemporaryPassword")]
+    partial class AddIsTemporaryPassword
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -764,118 +767,6 @@ namespace GymSaaS.Persistence.Migrations
                     b.ToTable("RolePermissions");
                 });
 
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePayment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Month")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ServiceName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ServicePaymentScheduleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ServiceType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServicePaymentScheduleId");
-
-                    b.ToTable("ServicePayments");
-                });
-
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePaymentSchedule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("GymClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Month")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("PaidDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("PtRegistrationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ServiceName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ServiceType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GymClassId");
-
-                    b.HasIndex("PtRegistrationId");
-
-                    b.ToTable("ServicePaymentSchedules");
-                });
-
             modelBuilder.Entity("GymSaaS.Domain.Entities.ServiceSetting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1343,32 +1234,6 @@ namespace GymSaaS.Persistence.Migrations
                     b.Navigation("Trainer");
                 });
 
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePayment", b =>
-                {
-                    b.HasOne("GymSaaS.Domain.Entities.ServicePaymentSchedule", "Schedule")
-                        .WithMany("Payments")
-                        .HasForeignKey("ServicePaymentScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Schedule");
-                });
-
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePaymentSchedule", b =>
-                {
-                    b.HasOne("GymSaaS.Domain.Entities.GymClass", "GymClass")
-                        .WithMany()
-                        .HasForeignKey("GymClassId");
-
-                    b.HasOne("GymSaaS.Domain.Entities.PtRegistration", "PtRegistration")
-                        .WithMany()
-                        .HasForeignKey("PtRegistrationId");
-
-                    b.Navigation("GymClass");
-
-                    b.Navigation("PtRegistration");
-                });
-
             modelBuilder.Entity("GymSaaS.Domain.Entities.Trainer", b =>
                 {
                     b.HasOne("GymSaaS.Domain.Entities.Branch", "Branch")
@@ -1437,11 +1302,6 @@ namespace GymSaaS.Persistence.Migrations
                 {
                     b.Navigation("PaymentSchedules");
 
-                    b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePaymentSchedule", b =>
-                {
                     b.Navigation("Payments");
                 });
 

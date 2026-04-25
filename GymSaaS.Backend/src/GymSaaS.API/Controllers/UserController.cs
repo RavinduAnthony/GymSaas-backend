@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using GymSaaS.Application.DTOs.Auth;
 using GymSaaS.Application.DTOs.Users;
 using GymSaaS.Application.Services;
 
@@ -51,6 +52,17 @@ public class UserController : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _service.DeleteAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>Reset password for a user (clears IsTemporaryPassword flag).</summary>
+    [HttpPost("{id:guid}/reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+            return BadRequest(new { success = false, message = "Password must be at least 6 characters." });
+
+        var result = await _service.ResetPasswordAsync(id, dto.NewPassword);
         return result.Success ? Ok(result) : NotFound(result);
     }
 }

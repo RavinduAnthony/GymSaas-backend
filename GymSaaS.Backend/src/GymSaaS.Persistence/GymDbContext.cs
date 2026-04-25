@@ -37,6 +37,8 @@ public class GymDbContext : DbContext
     public DbSet<PtRegistration> PtRegistrations { get; set; }
     public DbSet<AppRole> AppRoles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
+    public DbSet<ServicePaymentSchedule> ServicePaymentSchedules { get; set; }
+    public DbSet<ServicePayment> ServicePayments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -111,6 +113,12 @@ public class GymDbContext : DbContext
 
         modelBuilder.Entity<PaymentSchedule>()
             .HasQueryFilter(ps => ps.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<ServicePaymentSchedule>()
+            .HasQueryFilter(s => s.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<ServicePayment>()
+            .HasQueryFilter(s => s.TenantId == _tenantProvider.TenantId);
 
         // ─── Entity configurations ───────────────────────────
 

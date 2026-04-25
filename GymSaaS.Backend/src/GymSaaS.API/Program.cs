@@ -46,6 +46,8 @@ builder.Services.AddScoped<IRepository<PtRegistration>, GenericRepository<PtRegi
 builder.Services.AddScoped<IRepository<User>, GenericRepository<User>>();
 builder.Services.AddScoped<IRepository<AppRole>, GenericRepository<AppRole>>();
 builder.Services.AddScoped<IRepository<RolePermission>, GenericRepository<RolePermission>>();
+builder.Services.AddScoped<IRepository<ServicePaymentSchedule>, GenericRepository<ServicePaymentSchedule>>();
+builder.Services.AddScoped<IRepository<ServicePayment>, GenericRepository<ServicePayment>>();
 
 // ─── Application Services ────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -65,11 +67,15 @@ builder.Services.AddScoped<ClassTypeService>();
 builder.Services.AddScoped<IClassTimeSlotService, ClassTimeSlotService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<ServicePaymentService>();
 
 // ─── Infrastructure ──────────────────────────────────
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+// ─── Email (Brevo) ───────────────────────────────────
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>();
 
 // ─── JWT Authentication ──────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

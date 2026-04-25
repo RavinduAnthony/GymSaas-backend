@@ -51,6 +51,15 @@ public class PaymentDashboardSummaryDto
     public int LateCount { get; set; }
     public decimal LateAmount { get; set; }
     public int PaidThisMonth { get; set; }
+
+    // Service payment totals (classes + PT)
+    public decimal ServiceTotalRevenue { get; set; }
+    public decimal ServiceThisYearRevenue { get; set; }
+    public decimal ServiceThisMonthRevenue { get; set; }
+    public int ServicePendingCount { get; set; }
+    public decimal ServicePendingAmount { get; set; }
+    public int ServiceLateCount { get; set; }
+    public decimal ServiceLateAmount { get; set; }
 }
 
 public class PaymentTypeDto

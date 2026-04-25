@@ -22,4 +22,10 @@ public class AuthResponseDto
     public string UserId { get; set; } = string.Empty;
     public string TenantId { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public bool IsTemporaryPassword { get; set; }
+}
+
+public class ResetPasswordDto
+{
+    public string NewPassword { get; set; } = string.Empty;
 }

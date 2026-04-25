@@ -2,6 +2,7 @@
 using GymSaaS.Domain.Entities;
 using GymSaaS.Domain.Interfaces;
 using GymSaaS.Shared;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymSaaS.Application.Services;
 
@@ -13,6 +14,8 @@ public class PaymentService
     private readonly IRepository<Membership> _membershipRepo;
     private readonly IRepository<MembershipPackage> _packageRepo;
     private readonly IRepository<PaymentType> _paymentTypeRepo;
+    private readonly IRepository<ServicePaymentSchedule> _serviceScheduleRepo;
+    private readonly IRepository<ServicePayment> _servicePaymentRepo;
 
     public PaymentService(
         IRepository<PaymentSchedule> scheduleRepo,
@@ -20,7 +23,9 @@ public class PaymentService
         IRepository<Member> memberRepo,
         IRepository<Membership> membershipRepo,
         IRepository<MembershipPackage> packageRepo,
-        IRepository<PaymentType> paymentTypeRepo)
+        IRepository<PaymentType> paymentTypeRepo,
+        IRepository<ServicePaymentSchedule> serviceScheduleRepo,
+        IRepository<ServicePayment> servicePaymentRepo)
     {
         _scheduleRepo = scheduleRepo;
         _paymentRepo = paymentRepo;
@@ -28,6 +33,8 @@ public class PaymentService
         _membershipRepo = membershipRepo;
         _packageRepo = packageRepo;
         _paymentTypeRepo = paymentTypeRepo;
+        _serviceScheduleRepo = serviceScheduleRepo;
+        _servicePaymentRepo = servicePaymentRepo;
     }
 
     // -------------------------------------------------------------------------
@@ -257,16 +264,38 @@ public class PaymentService
             var paidThisMonth = schedules.Count(s =>
                 s.PaidDate >= monthStart && s.PaidDate < monthEnd && s.Status == "Paid");
 
+            // ── Service payment totals ────────────────────────────────────────
+            var servicePayments = await _servicePaymentRepo.GetAllAsync();
+            var serviceSchedules = await _serviceScheduleRepo.GetAllAsync();
+
+            var serviceTotalRevenue = servicePayments.Sum(p => p.Amount);
+            var serviceThisYearRevenue = servicePayments
+                .Where(p => p.Date >= yearStart && p.Date < yearEnd)
+                .Sum(p => p.Amount);
+            var serviceThisMonthRevenue = servicePayments
+                .Where(p => p.Date >= monthStart && p.Date < monthEnd)
+                .Sum(p => p.Amount);
+
+            var servicePending = serviceSchedules.Where(s => s.Status == "Pending").ToList();
+            var serviceLate    = serviceSchedules.Where(s => s.Status == "Late").ToList();
+
             return ApiResponse<PaymentDashboardSummaryDto>.Ok(new PaymentDashboardSummaryDto
             {
-                TotalRevenue = totalRevenue,
-                ThisYearRevenue = thisYearRevenue,
-                ThisMonthRevenue = thisMonthRevenue,
+                TotalRevenue    = totalRevenue + serviceTotalRevenue,
+                ThisYearRevenue = thisYearRevenue + serviceThisYearRevenue,
+                ThisMonthRevenue = thisMonthRevenue + serviceThisMonthRevenue,
                 PendingCount = pending.Count,
                 PendingAmount = pending.Sum(s => s.Amount),
                 LateCount = late.Count,
                 LateAmount = late.Sum(s => s.Amount),
                 PaidThisMonth = paidThisMonth,
+                ServiceTotalRevenue    = serviceTotalRevenue,
+                ServiceThisYearRevenue = serviceThisYearRevenue,
+                ServiceThisMonthRevenue = serviceThisMonthRevenue,
+                ServicePendingCount = servicePending.Count,
+                ServicePendingAmount = servicePending.Sum(s => s.Amount),
+                ServiceLateCount = serviceLate.Count,
+                ServiceLateAmount = serviceLate.Sum(s => s.Amount),
             });
         }
         catch (Exception ex)
