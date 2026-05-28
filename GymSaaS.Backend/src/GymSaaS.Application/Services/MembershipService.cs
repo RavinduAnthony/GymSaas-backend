@@ -11,20 +11,17 @@ public class MembershipService
     private readonly IRepository<Membership> _membershipRepo;
     private readonly IRepository<Payment> _paymentRepo;
     private readonly IRepository<MembershipPackage> _packageRepo;
-    private readonly IRepository<Member> _memberRepo;
     private readonly PaymentService _paymentService;
 
     public MembershipService(
         IRepository<Membership> membershipRepo,
         IRepository<Payment> paymentRepo,
         IRepository<MembershipPackage> packageRepo,
-        IRepository<Member> memberRepo,
         PaymentService paymentService)
     {
         _membershipRepo = membershipRepo;
         _paymentRepo = paymentRepo;
         _packageRepo = packageRepo;
-        _memberRepo = memberRepo;
         _paymentService = paymentService;
     }
 
@@ -100,39 +97,29 @@ public class MembershipService
             await _membershipRepo.SaveChangesAsync();
 
             var package = await _packageRepo.GetByIdAsync(dto.PackageId);
-            var packageName = package?.Name ?? string.Empty;
 
-            // Compute duration in months from the dates
-            int durationMonths = ((dto.EndDate.Year - dto.StartDate.Year) * 12)
-                                  + (dto.EndDate.Month - dto.StartDate.Month);
+            // Inclusive month count: StartDate=Jan, EndDate=May → 5 months (Jan,Feb,Mar,Apr,May)
+            var start = dto.StartDate;
+            var end   = dto.EndDate;
+            int durationMonths = ((end.Year - start.Year) * 12) + (end.Month - start.Month) + 1;
             if (durationMonths <= 0) durationMonths = 1;
 
-            // Generate payment schedule (correct path chosen via billingFrequency)
+            // Generate one PaymentSchedule row per billing month
             await _paymentService.GenerateScheduleAsync(
-                membership.Id, dto.MemberId,
-                durationMonths, dto.Price, dto.RegistrationFee,
-                package?.BillingFrequency ?? "Monthly");
+                membership.Id,
+                dto.MemberId,
+                durationMonths,
+                monthlyAmount: dto.Price,
+                registrationFee: 0,
+                billingFrequency: package?.BillingFrequency ?? "Monthly",
+                overrideFirstPayMonth: new DateTime(start.Year, start.Month, 1, 0, 0, 0, DateTimeKind.Utc));
 
-            // Auto-set MemberType on the member based on the package billing mode
-            // "FullPayment" package => Type B (Special) | "Monthly" => Type A (Monthly)
-            var member = await _memberRepo.GetByIdAsync(dto.MemberId);
-            if (member != null)
-            {
-                member.MemberType = package?.BillingFrequency == "FullPayment"
-                    ? AppConstants.MemberTypes.Special
-                    : AppConstants.MemberTypes.Monthly;
-                _memberRepo.Update(member);
-                await _memberRepo.SaveChangesAsync();
-            }
-
-            // If paid at registration, immediately mark initial payments as Paid
-            if (string.Equals(dto.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
-            {
-                await _paymentService.MarkInitialPaymentsAsPaidAsync(membership.Id, packageName, DateTime.UtcNow);
-            }
+            // If already marked Paid at creation, auto-mark initial schedules as paid
+            if (dto.PaymentStatus == "Paid")
+                await _paymentService.MarkInitialPaymentsAsPaidAsync(membership.Id, package?.Name ?? string.Empty, DateTime.UtcNow);
 
             var responseDto = MapToDto(membership);
-            responseDto.PackageName = packageName;
+            responseDto.PackageName = package?.Name ?? string.Empty;
             return ApiResponse<MembershipResponseDto>.Ok(responseDto, "Membership created.");
         }
         catch (Exception ex)
@@ -147,6 +134,9 @@ public class MembershipService
         {
             var membership = await _membershipRepo.GetByIdAsync(dto.MembershipId);
             if (membership == null) return ApiResponse.Fail("Membership not found.");
+
+            // Capture the old end date before updating — new schedules start from the month after it
+            var oldEndDate = membership.EndDate;
 
             membership.EndDate = dto.NewEndDate;
             membership.PaymentStatus = "Paid";
@@ -164,6 +154,24 @@ public class MembershipService
 
             await _paymentRepo.AddAsync(payment);
             await _paymentRepo.SaveChangesAsync();
+
+            // Generate payment schedules for the newly added months only
+            // (from the month after the old end date, through the new end date)
+            var newStart = new DateTime(oldEndDate.Year, oldEndDate.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+            var newEnd   = dto.NewEndDate;
+            int addedMonths = ((newEnd.Year - newStart.Year) * 12) + (newEnd.Month - newStart.Month) + 1;
+            if (addedMonths > 0)
+            {
+                var package = await _packageRepo.GetByIdAsync(membership.PackageId);
+                await _paymentService.GenerateScheduleAsync(
+                    membership.Id,
+                    membership.MemberId,
+                    addedMonths,
+                    monthlyAmount: dto.Amount - dto.Discount,
+                    registrationFee: 0,
+                    billingFrequency: package?.BillingFrequency ?? "Monthly",
+                    overrideFirstPayMonth: newStart);
+            }
 
             return ApiResponse.Ok("Membership renewed and payment recorded.");
         }

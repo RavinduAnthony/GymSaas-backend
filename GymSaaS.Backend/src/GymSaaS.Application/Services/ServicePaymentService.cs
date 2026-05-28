@@ -224,15 +224,41 @@ public class ServicePaymentService
 
     public async Task RefreshLateStatusInternalAsync()
     {
-        var now = DateTime.UtcNow;
+        var today = DateTime.UtcNow.Date;
         var schedules = await _scheduleRepo.AsQueryable()
             .Where(s => s.Status == "Pending")
             .ToListAsync();
 
+        // Same week-1 rule as member payments:
+        //   - Days 1-7 of billing month  → stay Pending
+        //   - Day 8+ of billing month    → flip to Late
+        //   - Billing month already passed entirely → always Late
         foreach (var s in schedules)
         {
-            // Past due date entirely → mark Late
-            if (s.DueDate.Date < now.Date)
+            if (!DateTime.TryParseExact(s.Month + "-01", "yyyy-MM-dd",
+                    null, System.Globalization.DateTimeStyles.None, out var billingMonthStart))
+                continue;
+
+            bool isLate;
+
+            // Past month entirely → always Late
+            if (today.Year > billingMonthStart.Year ||
+                (today.Year == billingMonthStart.Year && today.Month > billingMonthStart.Month))
+            {
+                isLate = true;
+            }
+            // Current billing month → Late only after day 7
+            else if (today.Year == billingMonthStart.Year && today.Month == billingMonthStart.Month)
+            {
+                isLate = today.Day > 7;
+            }
+            else
+            {
+                // Future month → not Late yet
+                isLate = false;
+            }
+
+            if (isLate)
             {
                 s.Status = "Late";
                 _scheduleRepo.Update(s);

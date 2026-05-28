@@ -3,6 +3,7 @@ using System;
 using GymSaaS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymSaaS.Persistence.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260425165014_AddPasswordResetOtp")]
+    partial class AddPasswordResetOtp
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,7 +55,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AppRoles", (string)null);
+                    b.ToTable("AppRoles");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Attendance", b =>
@@ -87,7 +90,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("MemberId");
 
-                    b.ToTable("Attendances", (string)null);
+                    b.ToTable("Attendances");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.AuditLog", b =>
@@ -121,7 +124,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Branch", b =>
@@ -157,7 +160,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Branches", (string)null);
+                    b.ToTable("Branches");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ClassSchedule", b =>
@@ -202,7 +205,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("GymClassId");
 
-                    b.ToTable("ClassSchedules", (string)null);
+                    b.ToTable("ClassSchedules");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ClassType", b =>
@@ -234,40 +237,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ClassTypes", (string)null);
-                });
-
-            modelBuilder.Entity("GymSaaS.Domain.Entities.FixedExpense", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FixedExpenses", (string)null);
+                    b.ToTable("ClassTypes");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.GymClass", b =>
@@ -333,7 +303,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("InstructorId");
 
-                    b.ToTable("GymClasses", (string)null);
+                    b.ToTable("GymClasses");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Member", b =>
@@ -425,7 +395,7 @@ namespace GymSaaS.Persistence.Migrations
                     b.HasIndex("TenantId", "MembershipNumber")
                         .IsUnique();
 
-                    b.ToTable("Members", (string)null);
+                    b.ToTable("Members");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Membership", b =>
@@ -471,7 +441,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("PackageId");
 
-                    b.ToTable("Memberships", (string)null);
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.MembershipPackage", b =>
@@ -530,7 +500,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Packages", (string)null);
+                    b.ToTable("Packages");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.PasswordResetOtp", b =>
@@ -558,7 +528,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PasswordResetOtps", (string)null);
+                    b.ToTable("PasswordResetOtps");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Payment", b =>
@@ -621,7 +591,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("PaymentTypeId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.PaymentSchedule", b =>
@@ -678,7 +648,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("PaymentTypeId");
 
-                    b.ToTable("PaymentSchedules", (string)null);
+                    b.ToTable("PaymentSchedules");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.PaymentType", b =>
@@ -702,7 +672,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PaymentTypes", (string)null);
+                    b.ToTable("PaymentTypes");
 
                     b.HasData(
                         new
@@ -764,7 +734,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("TrainerId");
 
-                    b.ToTable("PtRegistrations", (string)null);
+                    b.ToTable("PtRegistrations");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Role", b =>
@@ -788,7 +758,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.RolePermission", b =>
@@ -822,7 +792,7 @@ namespace GymSaaS.Persistence.Migrations
                     b.HasIndex("TenantId", "RoleName", "PermissionKey")
                         .IsUnique();
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePayment", b =>
@@ -876,7 +846,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("ServicePaymentScheduleId");
 
-                    b.ToTable("ServicePayments", (string)null);
+                    b.ToTable("ServicePayments");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ServicePaymentSchedule", b =>
@@ -934,7 +904,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("PtRegistrationId");
 
-                    b.ToTable("ServicePaymentSchedules", (string)null);
+                    b.ToTable("ServicePaymentSchedules");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.ServiceSetting", b =>
@@ -963,7 +933,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServiceSettings", (string)null);
+                    b.ToTable("ServiceSettings");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Tenant", b =>
@@ -1008,7 +978,7 @@ namespace GymSaaS.Persistence.Migrations
                     b.HasIndex("SubDomain")
                         .IsUnique();
 
-                    b.ToTable("Tenants", (string)null);
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Trainer", b =>
@@ -1082,7 +1052,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("TrainerTypeId");
 
-                    b.ToTable("Trainers", (string)null);
+                    b.ToTable("Trainers");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.TrainerAssignment", b =>
@@ -1111,7 +1081,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TrainerAssignments", (string)null);
+                    b.ToTable("TrainerAssignments");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.TrainerType", b =>
@@ -1143,7 +1113,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TrainerTypes", (string)null);
+                    b.ToTable("TrainerTypes");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.User", b =>
@@ -1206,43 +1176,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Users", (string)null);
-                });
-
-            modelBuilder.Entity("GymSaaS.Domain.Entities.VariableExpense", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("VariableExpenses", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.WorkingHours", b =>
@@ -1280,7 +1214,7 @@ namespace GymSaaS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkingHours", (string)null);
+                    b.ToTable("WorkingHours");
                 });
 
             modelBuilder.Entity("GymSaaS.Domain.Entities.Attendance", b =>

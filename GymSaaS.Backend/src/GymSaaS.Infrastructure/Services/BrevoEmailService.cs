@@ -110,4 +110,28 @@ public class BrevoEmailService : IEmailService
 
         await SendAsync(toEmail, $"Your Account Credentials — {senderName}", html);
     }
+
+    public async Task SendOtpAsync(string toEmail, string recipientName, string otp)
+    {
+        var senderName = _config["Brevo:SenderName"] ?? "Gym System";
+
+        var html = $@"<!DOCTYPE html>
+<html>
+<body style=""font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;"">
+  <div style=""max-width: 500px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);"">
+    <h2 style=""color: #6B46C1; margin-bottom: 4px;"">{senderName}</h2>
+    <hr style=""border: none; border-top: 3px solid #6B46C1; margin-bottom: 24px;"" />
+    <p style=""color: #333; font-size: 15px;"">Hi <strong>{recipientName}</strong>,</p>
+    <p style=""color: #555; font-size: 14px;"">You requested a password reset. Use the OTP below to confirm your new password:</p>
+    <div style=""text-align: center; margin: 28px 0;"">
+      <span style=""display: inline-block; letter-spacing: 12px; font-size: 36px; font-weight: bold; font-family: monospace; color: #6B46C1; background: #F3EEFF; padding: 16px 24px; border-radius: 8px; border: 2px dashed #6B46C1;"">{otp}</span>
+    </div>
+    <p style=""color: #E53E3E; font-size: 13px; text-align: center;"">⚠ This code is valid for <strong>1 minute</strong> only.</p>
+    <p style=""color: #999; font-size: 12px; margin-top: 24px;"">If you did not request a password reset, please ignore this email or contact your administrator.</p>
+  </div>
+</body>
+</html>";
+
+        await SendAsync(toEmail, $"Password Reset OTP — {senderName}", html);
+    }
 }

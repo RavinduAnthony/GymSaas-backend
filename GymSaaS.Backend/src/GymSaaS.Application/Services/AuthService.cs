@@ -14,12 +14,14 @@ public class AuthService : IAuthService
     private readonly GymDbContext _context;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly RoleService _roleService;
+    private readonly IEmailService _emailService;
 
-    public AuthService(GymDbContext context, IJwtTokenService jwtTokenService, RoleService roleService)
+    public AuthService(GymDbContext context, IJwtTokenService jwtTokenService, RoleService roleService, IEmailService emailService)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
         _roleService = roleService;
+        _emailService = emailService;
     }
 
     public async Task<ApiResponse<AuthResponseDto>> RegisterTenantAsync(RegisterTenantDto dto)
@@ -120,6 +122,8 @@ public class AuthService : IAuthService
                 UserId               = user.Id.ToString(),
                 TenantId             = user.TenantId.ToString(),
                 Role                 = user.Role.ToString(),
+                FirstName            = user.FirstName,
+                LastName             = user.LastName,
                 IsTemporaryPassword  = user.IsTemporaryPassword,
             });
         }
@@ -137,4 +141,92 @@ public class AuthService : IAuthService
 
     private static bool VerifyPassword(string password, string hash)
         => BCryptHash(password) == hash;
+
+    public async Task<ApiResponse<string>> RequestPasswordResetAsync(ForgotPasswordRequestDto dto)
+    {
+        try
+        {
+            if (dto.NewPassword != dto.ConfirmPassword)
+                return ApiResponse<string>.Fail("Passwords do not match.");
+
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                return ApiResponse<string>.Fail("Password must be at least 6 characters.");
+
+            // Find user across all tenants
+            var user = await _context.Users.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            if (user == null)
+                return ApiResponse<string>.Fail("No account found with this email address.");
+
+            // Invalidate all previous unused OTPs for this email
+            var oldOtps = await _context.PasswordResetOtps
+                .Where(o => o.Email == dto.Email && !o.IsUsed)
+                .ToListAsync();
+
+            foreach (var old in oldOtps)
+                old.IsUsed = true;
+
+            // Generate a cryptographically secure 6-digit OTP
+            var otp = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+
+            var resetOtp = new Domain.Entities.PasswordResetOtp
+            {
+                Email = dto.Email,
+                Code = otp,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(1),
+            };
+
+            await _context.PasswordResetOtps.AddAsync(resetOtp);
+            await _context.SaveChangesAsync();
+
+            // Send OTP email
+            var recipientName = $"{user.FirstName} {user.LastName}".Trim();
+            await _emailService.SendOtpAsync(dto.Email, recipientName, otp);
+
+            return ApiResponse<string>.Ok("OTP sent to your email address.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<string>.Fail($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<string>> ResetPasswordWithOtpAsync(ResetPasswordWithOtpDto dto)
+    {
+        try
+        {
+            var otpRecord = await _context.PasswordResetOtps
+                .Where(o => o.Email == dto.Email && o.Code == dto.Otp && !o.IsUsed)
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (otpRecord == null)
+                return ApiResponse<string>.Fail("Invalid or already used OTP.");
+
+            if (DateTime.UtcNow > otpRecord.ExpiresAt)
+                return ApiResponse<string>.Fail("OTP has expired. Please request a new one.");
+
+            // Mark OTP as used
+            otpRecord.IsUsed = true;
+
+            // Update user password
+            var user = await _context.Users.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            if (user == null)
+                return ApiResponse<string>.Fail("User not found.");
+
+            user.PasswordHash = BCryptHash(dto.NewPassword);
+            user.IsTemporaryPassword = false;
+
+            await _context.SaveChangesAsync();
+
+            return ApiResponse<string>.Ok("Password has been reset successfully.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<string>.Fail($"An error occurred: {ex.Message}");
+        }
+    }
 }

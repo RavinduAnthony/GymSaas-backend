@@ -43,18 +43,17 @@ builder.Services.AddScoped<IRepository<GymClass>, GenericRepository<GymClass>>()
 builder.Services.AddScoped<IRepository<ClassType>, GenericRepository<ClassType>>();
 builder.Services.AddScoped<IRepository<ClassSchedule>, GenericRepository<ClassSchedule>>();
 builder.Services.AddScoped<IRepository<PtRegistration>, GenericRepository<PtRegistration>>();
-builder.Services.AddScoped<IRepository<User>, GenericRepository<User>>();
 builder.Services.AddScoped<IRepository<AppRole>, GenericRepository<AppRole>>();
 builder.Services.AddScoped<IRepository<RolePermission>, GenericRepository<RolePermission>>();
 builder.Services.AddScoped<IRepository<ServicePaymentSchedule>, GenericRepository<ServicePaymentSchedule>>();
 builder.Services.AddScoped<IRepository<ServicePayment>, GenericRepository<ServicePayment>>();
+builder.Services.AddScoped<IRepository<User>, GenericRepository<User>>();
 
 // ─── Application Services ────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<TrainerService>();
-builder.Services.AddScoped<PtRegistrationService>();
 builder.Services.AddScoped<PackageService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<MembershipService>();
@@ -62,20 +61,20 @@ builder.Services.AddScoped<BranchService>();
 builder.Services.AddScoped<WorkingHoursService>();
 builder.Services.AddScoped<TrainerTypeService>();
 builder.Services.AddScoped<ServiceSettingService>();
-builder.Services.AddScoped<IGymClassService, GymClassService>();
-builder.Services.AddScoped<ClassTypeService>();
-builder.Services.AddScoped<IClassTimeSlotService, ClassTimeSlotService>();
-builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<ClassTypeService>();
+builder.Services.AddScoped<GymClassService>();
+builder.Services.AddScoped<ClassTimeSlotService>();
+builder.Services.AddScoped<PtRegistrationService>();
+builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ServicePaymentService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
 // ─── Infrastructure ──────────────────────────────────
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-
-// ─── Email (Brevo) ───────────────────────────────────
-builder.Services.AddHttpClient<IEmailService, BrevoEmailService>();
 
 // ─── JWT Authentication ──────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

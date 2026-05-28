@@ -46,4 +46,36 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "An error occurred during login.", error = ex.Message });
         }
     }
+
+    /// <summary>Validate new password and send OTP to the user's email</summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
+    {
+        try
+        {
+            var result = await _authService.RequestPasswordResetAsync(dto);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred.", error = ex.Message });
+        }
+    }
+
+    /// <summary>Verify OTP and apply the new password</summary>
+    [HttpPost("reset-password-otp")]
+    public async Task<IActionResult> ResetPasswordWithOtp([FromBody] ResetPasswordWithOtpDto dto)
+    {
+        try
+        {
+            var result = await _authService.ResetPasswordWithOtpAsync(dto);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred.", error = ex.Message });
+        }
+    }
 }

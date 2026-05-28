@@ -62,4 +62,11 @@ public class PaymentsController : ControllerBase
     [Authorize(Roles = "Owner,Manager")]
     public async Task<IActionResult> RefreshLate()
         => Ok(await _paymentService.RefreshLateStatusAsync());
+
+    /// POST api/payments/generate-member-schedules — backfill missing PaymentSchedule rows
+    /// for all memberships (from StartDate through EndDate). Safe to call multiple times.
+    [HttpPost("generate-member-schedules")]
+    [Authorize(Roles = "Owner,Manager")]
+    public async Task<IActionResult> GenerateMemberSchedules()
+        => Ok(await _paymentService.GenerateMissingMemberSchedulesAsync());
 }

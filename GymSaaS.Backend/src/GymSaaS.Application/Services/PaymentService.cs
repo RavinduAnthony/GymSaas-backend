@@ -42,22 +42,22 @@ public class PaymentService
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Generates PaymentSchedule records for a newly created membership.
+    /// Generates PaymentSchedule records for a membership.
     /// Business rules:
     ///  - Registration fee: due today (one-time)
-    ///  - If today is in the LAST WEEK of the month ? first monthly payment shifts to next month
-    ///  - Monthly payments due on 5th of each month
+    ///  - Monthly payments: due on 7th of each billing month
+    ///  - If overrideFirstPayMonth is null and today is in the LAST WEEK → first payment shifts to next month
+    ///  - overrideFirstPayMonth: forces the first billing month (used when creating from membership start date)
     /// </summary>
     public async Task GenerateScheduleAsync(
         Guid membershipId, Guid memberId,
         int durationMonths, decimal monthlyAmount, decimal registrationFee,
-        string billingFrequency = "Monthly")
+        string billingFrequency = "Monthly",
+        DateTime? overrideFirstPayMonth = null)
     {
         var today = DateTime.UtcNow;
-        var daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
-        bool isLastWeek = today.Day > daysInMonth - 7;
 
-        // Registration fee (one-time, due today) - always applies regardless of billing mode
+        // Registration fee (one-time, due today)
         if (registrationFee > 0)
         {
             await _scheduleRepo.AddAsync(new PaymentSchedule
@@ -74,7 +74,6 @@ public class PaymentService
 
         if (billingFrequency == "FullPayment")
         {
-            // Single upfront payment for the entire duration
             var totalAmount = monthlyAmount * durationMonths;
             await _scheduleRepo.AddAsync(new PaymentSchedule
             {
@@ -89,15 +88,30 @@ public class PaymentService
         }
         else
         {
-            // Monthly: one schedule row per month, due on the 5th
-            var firstPayMonth = isLastWeek
-                ? new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1)
-                : new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            DateTime firstPayMonth;
+            if (overrideFirstPayMonth.HasValue)
+            {
+                // Use the explicit start month (e.g. membership.StartDate)
+                firstPayMonth = new DateTime(
+                    overrideFirstPayMonth.Value.Year,
+                    overrideFirstPayMonth.Value.Month,
+                    1, 0, 0, 0, DateTimeKind.Utc);
+            }
+            else
+            {
+                // Default: if in the last week of current month, shift to next month
+                var daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+                bool isLastWeek = today.Day > daysInMonth - 7;
+                firstPayMonth = isLastWeek
+                    ? new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1)
+                    : new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            }
 
             for (int i = 0; i < durationMonths; i++)
             {
                 var payMonth = firstPayMonth.AddMonths(i);
-                var dueDate = new DateTime(payMonth.Year, payMonth.Month, 5, 0, 0, 0, DateTimeKind.Utc);
+                // Due on 7th — end of grace period; Pending days 1-7, Late days 8+
+                var dueDate = new DateTime(payMonth.Year, payMonth.Month, 7, 0, 0, 0, DateTimeKind.Utc);
                 await _scheduleRepo.AddAsync(new PaymentSchedule
                 {
                     MembershipId = membershipId,
@@ -458,11 +472,42 @@ public class PaymentService
         var today = DateTime.UtcNow.Date;
         var schedules = await _scheduleRepo.GetAllAsync();
 
-        // Only auto-mark RegularMonthly (3) as late - skip RegFee(1), Initial(2), FullPackagePayment(5)
-        var overdue = schedules.Where(s =>
+        // Mark monthly payments as Late only after the 1st week (day 7) of the billing month.
+        // Rule:
+        //   - Days 1-7 of billing month  → stay Pending
+        //   - Day 8+ of billing month    → flip to Late
+        //   - Billing month already passed entirely → always Late
+        // Applies to both RegularMonthly (3) and MonthlyInitial (2).
+        // Skips: RegistrationFee (1), FullPackagePayment (5), LateMonthly (4).
+        var monthlyTypes = new[]
+        {
+            GymSaaS.Shared.AppConstants.PaymentTypeIds.RegularMonthly,
+            GymSaaS.Shared.AppConstants.PaymentTypeIds.MonthlyInitial,
+        };
+
+        var candidates = schedules.Where(s =>
             s.Status == "Pending" &&
-            s.PaymentTypeId == GymSaaS.Shared.AppConstants.PaymentTypeIds.RegularMonthly &&
-            s.DueDate.Date < today).ToList();
+            monthlyTypes.Contains(s.PaymentTypeId)).ToList();
+
+        var overdue = candidates.Where(s =>
+        {
+            // Parse the billing month from the schedule's Month field ("yyyy-MM")
+            if (!DateTime.TryParseExact(s.Month + "-01", "yyyy-MM-dd",
+                    null, System.Globalization.DateTimeStyles.None, out var billingMonthStart))
+                return false;
+
+            // Past month entirely → always Late
+            if (today.Year > billingMonthStart.Year ||
+                (today.Year == billingMonthStart.Year && today.Month > billingMonthStart.Month))
+                return true;
+
+            // Current billing month → Late only after day 7
+            if (today.Year == billingMonthStart.Year && today.Month == billingMonthStart.Month)
+                return today.Day > 7;
+
+            // Future month → never Late yet
+            return false;
+        }).ToList();
 
         foreach (var s in overdue)
         {
@@ -473,6 +518,115 @@ public class PaymentService
 
         if (overdue.Count > 0)
             await _scheduleRepo.SaveChangesAsync();
+    }
+
+    // -------------------------------------------------------------------------
+    // Backfill — generate missing schedules for existing memberships
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Generates missing PaymentSchedule rows for all active memberships
+    /// (memberships where EndDate >= today).
+    /// Safe to call multiple times — skips months that already have a schedule.
+    /// Returns the number of new schedule rows created.
+    /// </summary>
+    public async Task<ApiResponse<string>> GenerateMissingMemberSchedulesAsync()
+    {
+        try
+        {
+            var today = DateTime.UtcNow.Date;
+            var memberships = await _membershipRepo.GetAllAsync();
+            var packages = await _packageRepo.GetAllAsync();
+            var existingSchedules = await _scheduleRepo.GetAllAsync();
+            var packageDict = packages.ToDictionary(p => p.Id);
+
+            // Build a set of (membershipId, month) that already exist
+            var existingKeys = new HashSet<string>(
+                existingSchedules.Select(s => $"{s.MembershipId}|{s.Month}"));
+
+            int generated = 0;
+            int skipped = 0;
+
+            foreach (var membership in memberships)
+            {
+                var start = new DateTime(membership.StartDate.Year, membership.StartDate.Month, 1,
+                    0, 0, 0, DateTimeKind.Utc);
+                var end   = new DateTime(membership.EndDate.Year,   membership.EndDate.Month,   1,
+                    0, 0, 0, DateTimeKind.Utc);
+
+                var billing = packageDict.TryGetValue(membership.PackageId, out var pkg)
+                    ? pkg.BillingFrequency : "Monthly";
+
+                if (billing == "FullPayment")
+                {
+                    // FullPayment: one row for the entire duration keyed to start month
+                    var key = $"{membership.Id}|{start:yyyy-MM}";
+                    if (!existingKeys.Contains(key))
+                    {
+                        int totalMonths = ((end.Year - start.Year) * 12) + (end.Month - start.Month) + 1;
+                        if (totalMonths <= 0) totalMonths = 1;
+                        await _scheduleRepo.AddAsync(new PaymentSchedule
+                        {
+                            MembershipId = membership.Id,
+                            MemberId     = membership.MemberId,
+                            DueDate      = new DateTime(start.Year, start.Month, 7, 0, 0, 0, DateTimeKind.Utc),
+                            Amount       = membership.Price * totalMonths,
+                            Status       = "Pending",
+                            PaymentTypeId = AppConstants.PaymentTypeIds.MonthlyInitial,
+                            Month        = start.ToString("yyyy-MM"),
+                        });
+                        existingKeys.Add(key);
+                        generated++;
+                    }
+                    else skipped++;
+                    continue;
+                }
+
+                // Monthly: one row per month from StartDate through EndDate
+                var cursor = start;
+                int monthIndex = 0;
+                while (cursor <= end)
+                {
+                    var monthStr = cursor.ToString("yyyy-MM");
+                    var key = $"{membership.Id}|{monthStr}";
+
+                    if (!existingKeys.Contains(key))
+                    {
+                        var dueDate = new DateTime(cursor.Year, cursor.Month, 7, 0, 0, 0, DateTimeKind.Utc);
+                        await _scheduleRepo.AddAsync(new PaymentSchedule
+                        {
+                            MembershipId  = membership.Id,
+                            MemberId      = membership.MemberId,
+                            DueDate       = dueDate,
+                            Amount        = membership.Price,
+                            Status        = "Pending",
+                            PaymentTypeId = monthIndex == 0
+                                ? AppConstants.PaymentTypeIds.MonthlyInitial
+                                : AppConstants.PaymentTypeIds.RegularMonthly,
+                            Month = monthStr,
+                        });
+                        existingKeys.Add(key);
+                        generated++;
+                    }
+                    else skipped++;
+
+                    cursor = cursor.AddMonths(1);
+                    monthIndex++;
+                }
+            }
+
+            if (generated > 0)
+                await _scheduleRepo.SaveChangesAsync();
+
+            // Re-run late refresh so past months are correctly classified
+            await RefreshLateStatusInternalAsync();
+
+            return ApiResponse<string>.Ok($"Done. Generated: {generated}, Already existed: {skipped}.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<string>.Fail($"Error: {ex.Message}");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -512,7 +666,7 @@ public class PaymentService
             PaymentTypeName = lookup.typeNames.TryGetValue(s.PaymentTypeId, out var tn) ? tn : "",
             PaidDate = s.PaidDate,
             Notes = s.Notes,
-            Month = s.DueDate.ToString("yyyy-MM"),
+            Month = !string.IsNullOrEmpty(s.Month) ? s.Month : s.DueDate.ToString("yyyy-MM"),
         };
     }
 

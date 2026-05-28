@@ -25,6 +25,9 @@ public class GymClass : BaseTenantEntity
     public Guid? BranchId { get; set; }
     public Branch? Branch { get; set; }
 
+    // Class Type
+    public Guid? ClassTypeId { get; set; }
+
     public string Status { get; set; } = "Active";
 
     // Per-day schedules

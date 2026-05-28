@@ -39,6 +39,9 @@ public class GymDbContext : DbContext
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<ServicePaymentSchedule> ServicePaymentSchedules { get; set; }
     public DbSet<ServicePayment> ServicePayments { get; set; }
+    public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
+    public DbSet<FixedExpense> FixedExpenses { get; set; }
+    public DbSet<VariableExpense> VariableExpenses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -81,6 +84,12 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Branch>()
             .HasQueryFilter(b => b.TenantId == _tenantProvider.TenantId);
 
+        modelBuilder.Entity<WorkingHours>()
+            .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<PaymentSchedule>()
+            .HasQueryFilter(ps => ps.TenantId == _tenantProvider.TenantId);
+
         modelBuilder.Entity<TrainerType>()
             .HasQueryFilter(tt => tt.TenantId == _tenantProvider.TenantId);
 
@@ -102,23 +111,20 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<AppRole>()
             .HasQueryFilter(ar => ar.TenantId == _tenantProvider.TenantId);
 
-        modelBuilder.Entity<RolePermission>(entity =>
-        {
-            entity.HasQueryFilter(rp => rp.TenantId == _tenantProvider.TenantId);
-            entity.HasIndex(rp => new { rp.TenantId, rp.RoleName, rp.PermissionKey }).IsUnique();
-        });
-
-        modelBuilder.Entity<WorkingHours>()
-            .HasQueryFilter(wh => wh.TenantId == _tenantProvider.TenantId);
-
-        modelBuilder.Entity<PaymentSchedule>()
-            .HasQueryFilter(ps => ps.TenantId == _tenantProvider.TenantId);
+        modelBuilder.Entity<RolePermission>()
+            .HasQueryFilter(rp => rp.TenantId == _tenantProvider.TenantId);
 
         modelBuilder.Entity<ServicePaymentSchedule>()
-            .HasQueryFilter(s => s.TenantId == _tenantProvider.TenantId);
+            .HasQueryFilter(sps => sps.TenantId == _tenantProvider.TenantId);
 
         modelBuilder.Entity<ServicePayment>()
-            .HasQueryFilter(s => s.TenantId == _tenantProvider.TenantId);
+            .HasQueryFilter(sp => sp.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<FixedExpense>()
+            .HasQueryFilter(e => e.TenantId == _tenantProvider.TenantId);
+
+        modelBuilder.Entity<VariableExpense>()
+            .HasQueryFilter(e => e.TenantId == _tenantProvider.TenantId);
 
         // ─── Entity configurations ───────────────────────────
 
@@ -143,8 +149,6 @@ public class GymDbContext : DbContext
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.MembershipNumber).IsRequired().HasMaxLength(20);
-            entity.HasIndex(e => new { e.TenantId, e.MembershipNumber }).IsUnique();
             entity.HasOne(e => e.Trainer).WithMany(t => t.Members).HasForeignKey(e => e.TrainerId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.Branch).WithMany(b => b.Members).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
         });
@@ -155,21 +159,6 @@ public class GymDbContext : DbContext
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.HasOne(e => e.Branch).WithMany(b => b.Trainers).HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
-            entity.HasOne(e => e.TrainerType).WithMany(tt => tt.Trainers).HasForeignKey(e => e.TrainerTypeId).OnDelete(DeleteBehavior.SetNull);
-        });
-
-        modelBuilder.Entity<TrainerType>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(500);
-        });
-
-        modelBuilder.Entity<ClassType>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Branch>(entity =>
@@ -240,25 +229,50 @@ public class GymDbContext : DbContext
             entity.HasOne(e => e.Member).WithMany(m => m.Attendances).HasForeignKey(e => e.MemberId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<Trainer>(entity =>
+        {
+            entity.HasOne(e => e.TrainerType).WithMany(tt => tt.Trainers).HasForeignKey(e => e.TrainerTypeId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<TrainerType>(entity =>
+        {
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Member>(entity =>
+        {
+            entity.Property(e => e.MembershipNumber).HasMaxLength(20);
+            entity.HasIndex(e => new { e.TenantId, e.MembershipNumber }).IsUnique();
+        });
+
+        modelBuilder.Entity<ClassType>(entity =>
+        {
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
         modelBuilder.Entity<GymClass>(entity =>
         {
-            entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Category).HasMaxLength(100);
             entity.Property(e => e.DefaultAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.HourlyRate).HasColumnType("decimal(18,2)");
-            entity.HasOne(e => e.Instructor).WithMany().HasForeignKey(e => e.InstructorId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.Branch).WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Instructor).WithMany().HasForeignKey(e => e.InstructorId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<ClassType>().WithMany(ct => ct.GymClasses).HasForeignKey(e => e.ClassTypeId);
         });
 
         modelBuilder.Entity<ClassSchedule>(entity =>
         {
-            entity.HasKey(e => e.Id);
             entity.Property(e => e.DayOfWeek).IsRequired().HasMaxLength(20);
             entity.Property(e => e.StartTime).IsRequired().HasMaxLength(10);
             entity.Property(e => e.EndTime).IsRequired().HasMaxLength(10);
-            entity.HasOne(e => e.Branch).WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.GymClass).WithMany(gc => gc.Schedules).HasForeignKey(e => e.GymClassId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasIndex(e => new { e.TenantId, e.RoleName, e.PermissionKey }).IsUnique();
         });
     }
 
